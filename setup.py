@@ -26,6 +26,7 @@ Processing API and based on the python-trio async/await event loop.
     package_dir={'': 'src'},
     install_requires=[
         'attrs >= 18.1.0',
+        'h11 >= 0.9.0',
         'trio >= 0.11.0',
         'trio-util >= 0.1.0',
         'trio-websocket >= 0.8.0'

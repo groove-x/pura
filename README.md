@@ -66,6 +66,10 @@ async with trio.open_nursery() as nursery:
 See the project [`examples/`](examples/) directory, as well as documentation on the
 WebView class.
 
+Note that, since it's unlikely that Pura can be used as-is in another
+project, the package has not been released to pypi.  Please file an
+issue if you believe otherwise.
+
 ## Disclaimer
 
 Pura is shared as a proof of concept.  It is intended to be used over a
