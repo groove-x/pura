@@ -46,7 +46,7 @@ class instances.
 from pura import WebView, WebViewServer
 import trio
 
-Foo(WebView):
+class Foo(WebView):
     def draw(self):
         self.background(0)
         ...
