@@ -34,7 +34,7 @@ Then connect at http://localhost:8080/
 ## Using pura in your own project
 
 Pura requires that your program be running under the
-[python-trio](https://github.com/python-trio/trio) async/await eval loop.
+[python-trio](https://github.com/python-trio/trio) async/await event loop.
 
 Add visualizations to your program by inheriting from `WebView`
 and implementing a `draw()` method.
