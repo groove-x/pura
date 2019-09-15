@@ -5,6 +5,10 @@
 Pura is a simple embedded visualization framework inspired by the
 Processing API and based on the python-trio async/await event loop.
 
+During development it's productive to have visualizations that let
+you see and alter the internal state of your program.  Pura lets
+you create these easily along side your regular code.
+
 Points:
  * a program can register one or more animated graphical views
  * views are written in a subset of the [Processing API](https://py.processing.org/reference/)
