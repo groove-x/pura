@@ -11,7 +11,7 @@ you create these easily along side your regular code.
 
 Points:
  * a program can register one or more animated graphical views
- * views are written in a subset of the [Processing API](https://py.processing.org/reference/)
+ * views are coded using a subset of the [Processing API](https://py.processing.org/reference/)
  * views can be observed over HTTP by one or more browser clients
  * views have no overhead unless there is a remote client specifically observing it
  * keyboard and mouse input is supported
@@ -41,10 +41,10 @@ Pura requires that your program be running under the
 [python-trio](https://github.com/python-trio/trio) async/await event loop.
 
 Add visualizations to your program by inheriting from `WebView`
-and implementing a `draw()` method.
+and implementing the `draw()` method.
 
-From your main program, launch the web view server and register your
-class instances.
+At the top level of your program, launch the web view server and
+register your class instances.
 
 ```python
 from pura import WebView, WebViewServer
@@ -67,8 +67,8 @@ async with trio.open_nursery() as nursery:
     nursery.start_soon(foo._serve_webview, server, 320, 240)
 ```
 
-See the project [`examples/`](examples/) directory, as well as documentation on the
-WebView class.
+See the project [`examples/`](examples/) directory, as well as the
+`WebView` class documentation.
 
 Note that, since it's unlikely that Pura can be used as-is in another
 project, the package has not been released to pypi.  Please file an
