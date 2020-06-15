@@ -164,8 +164,8 @@ pura.webviewSelect.onchange = function() {
     let name = pura.webviewSelect.value;
     let info = pura.webviewInfoByName[name];
     let pixelRatio = window.devicePixelRatio;
-    canvas.width = pura.backCanvas.width = info.width * pixelRatio;
-    canvas.height = pura.backCanvas.height = info.height * pixelRatio;
+    canvas.width = pura.backCanvas.width = Math.trunc(info.width * pixelRatio);
+    canvas.height = pura.backCanvas.height = Math.trunc(info.height * pixelRatio);
     canvas.style.width = info.width + 'px';
     canvas.style.height = info.height + 'px';
     pura.backContext.scale(pixelRatio, pixelRatio);

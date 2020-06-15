@@ -265,7 +265,7 @@ class WebView:
             f"ctx.lineCap = 'round';"
             f"ctx.font = '{DEFAULT_TEXT_SIZE}px {DEFAULT_TEXT_FONT}';"
             f"ctx.fillStyle = '{_canvas_color(DEFAULT_BACKGROUND_COLOR)}';"
-            f"ctx.fillRect(0, 0, canvas.width, canvas.height);"
+            f"ctx.fillRect(0, 0, {self.width}, {self.height});"
             f"ctx.fillStyle = '{_canvas_color(DEFAULT_FILL_COLOR)}';"
         )
         for image in self._images:
@@ -360,7 +360,7 @@ class WebView:
         return (
             f"ctx.save();"
             f"ctx.fillStyle = '{_canvas_color(*args)}';"
-            f"ctx.fillRect(0, 0, canvas.width, canvas.height);"
+            f"ctx.fillRect(0, 0, {self.width}, {self.height});"
             f"ctx.restore();"
         )
 
