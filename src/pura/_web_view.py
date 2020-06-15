@@ -21,7 +21,7 @@ DEFAULT_BACKGROUND_COLOR = 200
 DEFAULT_FILL_COLOR = 255
 
 
-@attrs(auto_attribs=True, cmp=False, slots=True, str=False)
+@attrs(auto_attribs=True, eq=False, slots=True, str=False)
 @total_ordering
 class KeyboardKey:  # pylint: disable=no-member
     """Represents a keyboard input with modifiers
