@@ -15,8 +15,5 @@ lint:
 type_check:
 	mypy --ignore-missing-imports src/ examples/ tests/
 
-pinned-requirements.txt: setup.py
-	pip-compile --output-file $@
-
-test-requirements.txt: test-requirements.in
-	pip-compile --output-file $@ $<
+test-requirements.txt: setup.py test-requirements.in
+	pip-compile --output-file $@ $^
