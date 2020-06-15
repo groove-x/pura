@@ -53,6 +53,7 @@ import trio
 class Foo(WebView):
     def draw(self):
         self.background(0)
+        self.line(0, 0, self.width, self.height)
         ...
 
 ...
