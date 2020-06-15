@@ -24,6 +24,10 @@ HTML_PATH = local_to_abs_path('html/')
 
 
 # TODO: run HTTP and websocket on the same port
+# TODO: use hypercorn for HTTP server (rather than hacked h11 sample)
+#   Example at https://github.com/python-trio/snekomatic/blob/1013a7b875ff8477c2db2b91d48faf938c4f8d81/snekomatic/app.py
+#   It may also be possible to do websocket with hypercorn, replacing
+#   trio-websocket.  See https://pgjones.dev/blog/http-1-2-3-2019/.
 async def http_request_handler(server, request, *, title=None,
                                http_port=None, ws_port=None):
     target = request.target.decode('ascii')

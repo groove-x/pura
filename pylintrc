@@ -24,5 +24,8 @@ disable=bad-whitespace,
         wrong-spelling-in-comment,
         wrong-spelling-in-docstring
 
+[FORMAT]
+ignore-long-lines=^.*<?https?://\S+>?$
+
 [REPORTS]
 score=no

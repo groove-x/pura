@@ -148,6 +148,11 @@ class Images(WebView):
         self.background(64)
         # pass image binary
         self.image(self.img2_str, 0, self.height - 16)
+        # NOTE: Purposely leaving a transform open until the end of draw.
+        #   It should not affect render of image() above assuming that the load
+        #   and draw context are correctly synchronized.
+        X_OFFSET = 50
+        self.translate(X_OFFSET, 0)
         # pass image reference - draw enlarged with smoothing disabled, and again animated
         offset = int(math.sin(self.frameCount / 5) * 16)
         self.image(self.img, self.width / 2 + offset, self.height / 2)
@@ -160,8 +165,8 @@ class Images(WebView):
         # (icon will flash for a single frame)
         if self.frameCount % 20 == 0:
             img2 = self.loadImage(self.img2_str)
-            self.image(img2, self.width - 16, self.height - 16)
-            self.image(img2, self.width - 16, self.height - 16 * 3)
+            self.image(img2, self.width - 16 - X_OFFSET, self.height - 16)
+            self.image(img2, self.width - 16 - X_OFFSET, self.height - 16 * 3)
             self.unloadImage(img2)
 
 

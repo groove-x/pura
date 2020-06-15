@@ -24,6 +24,8 @@ pura.lastWebview = window.location.hash ? window.location.hash.slice(1) : null;
 pura.lastButtons = [];
 pura.lastAxes = [];
 pura.imagesById = {};
+pura.isImageLoadPending = false;
+pura.pendingCommands = [];  // to queue commands during image loading
 
 // Subscribe to a webview server to receive information about added views,
 // which we then present in the selection dropdown.  See add_webview().
@@ -154,8 +156,18 @@ let webview_onopen = function(e) {
     //}));
 };
 
-let webview_ononmessage = function(e) {
-    pura.eval(e.data, pura.backContext);
+let webview_onmessage = function(e) {
+    if (pura.isImageLoadPending) {
+        pura.pendingCommands.push(e.data);
+    } else {
+        pura.eval(e.data, pura.backContext);
+    }
+};
+
+pura.resumeCommands = function() {
+    while (pura.pendingCommands.length > 0 && !pura.isImageLoadPending) {
+        pura.eval(pura.pendingCommands.shift(), pura.backContext);
+    }
 };
 
 pura.webviewSelect.onchange = function() {
@@ -173,7 +185,7 @@ pura.webviewSelect.onchange = function() {
     // TODO: retry if webview socket is disconnected but main socket remains
     let ws = new WebSocket(info.url);
     ws.onopen = webview_onopen;
-    ws.onmessage = webview_ononmessage;
+    ws.onmessage = webview_onmessage;
     pura.webviewSocket = ws;
     pura.webviewSelect.blur();
     pura.lastWebview = name;

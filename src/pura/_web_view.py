@@ -4,6 +4,7 @@ import math
 from contextlib import contextmanager
 from enum import Enum, auto
 from functools import wraps, total_ordering
+from itertools import takewhile
 
 import trio
 from attr import attrs, attrib
@@ -145,6 +146,15 @@ def queue_eval(func):
         assert s.endswith((';', '}'))
         assert self._is_draw_context, 'WebView API used outside of draw() context'
         self._sendQueue.append(s)
+        # A terrible hack... since the client must queue commands while an image
+        # load is pending, and since commands are batched from our side, it's
+        # necessary to force a batch boundary after an image load.  The existence
+        # of "isImageLoadPending" indicates such an image load, but this will add
+        # unnecessary boundaries due to conditional expressions in the commands.
+        # TODO: Use a different approach like command grouping so that the client
+        #  understands boundaries regardless of batching.
+        if 'isImageLoadPending' in s:
+            self._sendQueue.append('')
     return wrapper
 
 
@@ -236,6 +246,7 @@ class WebView:
         self._frame_rate = frame_rate
         self._peers = set()
         self._hasPeers = AsyncBool()
+        # NOTE: empty string is used to force a batching boundary
         self._sendQueue = []
         self._receiveQueue = []
         self._shapeState = _ShapeState.NONE
@@ -343,12 +354,20 @@ class WebView:
                 self.draw()
                 self._swapBuffer()
             self._is_draw_context = False
-            # batch messages into two parts
-            # (simple, minimizes send count, provides some pipelining with client)
-            mid_index = len(self._sendQueue) // 2
-            for strings in (self._sendQueue[:mid_index], self._sendQueue[mid_index:]):
-                if strings:
-                    await self._broadcast(peers, ''.join(strings))
+            # batch messages to minimize send count
+            # honor explicit batch boundaries (empty string)
+            # force a break mid-queue to provide some pipelining with client
+            if len(self._sendQueue) > 1:
+                mid_index = len(self._sendQueue) // 2
+                if '' not in self._sendQueue[mid_index-1:mid_index+1]:
+                    self._sendQueue.insert(mid_index, '')
+            strings_iter = iter(self._sendQueue)
+            while True:
+                msg = ''.join(takewhile(lambda s: s, strings_iter))
+                if msg:
+                    await self._broadcast(peers, msg)
+                else:
+                    break
             self._sendQueue.clear()
             self.frameCount += 1
 
@@ -538,14 +557,22 @@ class WebView:
                 '{'
                 f'let image = pura.imagesById[{id(image)}];'
                 f'if (image.complete) ctx.drawImage(image,{x},{y}{size_args});'
-                f'else image.addEventListener("load",function(){{ctx.drawImage(image,{x},{y}{size_args});}});'
-                '}'
+                'else {pura.isImageLoadPending = true; image.addEventListener("load", function(){'
+                f' ctx.drawImage(image,{x},{y}{size_args});'
+                '  pura.isImageLoadPending = false;'
+                '  pura.resumeCommands();'
+                '});}'                '}'
             )
         base64_str = image_or_base64_str
         return (
             '{'
             'let image = new Image();'
-            f'image.onload = function(){{ctx.drawImage(image,{x},{y}{size_args});}};'
+            'pura.isImageLoadPending = true;'
+            'image.onload = function(){'
+            f' ctx.drawImage(image,{x},{y}{size_args});'
+            '  pura.isImageLoadPending = false;'
+            '  pura.resumeCommands();'
+            '};'
             f'image.src = "data:image/png;base64,{base64_str}";'
             '}'
         )
