@@ -22,8 +22,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip-sync pinned-requirements.txt test-requirements.txt
-            pip install -e .
+            pip install -r pinned-requirements.txt -r test-requirements.txt -e .
             curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
@@ -63,8 +62,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip-sync pinned-requirements.txt test-requirements.txt
-            pip install -e .
+            pip install -r pinned-requirements.txt -r test-requirements.txt -e .
             curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
