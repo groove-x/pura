@@ -148,19 +148,21 @@ class Images(WebView):
         self.background(64)
         # pass image binary
         self.image(self.img2_str, 0, self.height - 16)
-        # pass image reference - draw enlarged, and again animated
+        # pass image reference - draw enlarged with smoothing disabled, and again animated
         offset = int(math.sin(self.frameCount / 5) * 16)
         self.image(self.img, self.width / 2 + offset, self.height / 2)
-        self.image(self.img, 0, 0, self.width / 2, self.height / 2)
+        with self.pushContext():
+            self.noSmooth()
+            self.image(self.img, 0, 0, self.width / 2, self.height / 2)
         # Demonstrate that:
         #   1) image() will wait for pending loadImage()
         #   2) call of unloadImage() immediately after image() is OK
         # (icon will flash for a single frame)
         if self.frameCount % 20 == 0:
-            img = self.loadImage(self.img2_str)
-            self.image(img, self.width - 16, self.height - 16)
-            self.image(img, self.width - 16, self.height - 16 * 3)
-            self.unloadImage(img)
+            img2 = self.loadImage(self.img2_str)
+            self.image(img2, self.width - 16, self.height - 16)
+            self.image(img2, self.width - 16, self.height - 16 * 3)
+            self.unloadImage(img2)
 
 
 class Follow3(WebView):

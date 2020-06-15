@@ -207,6 +207,10 @@ class WebView:
           from loadImage().  Since it the client draw is blocked until the
           image is ready, streaming of image sequences is possible.
 
+        * smooth() takes no argument, and applies only to image() and not to
+          other drawing primitives.  Unlike Processing 3, it's bound to the
+          draw context.
+
     Deriving classes need to override the draw() method.  It's only called
     when there is an active client connection.
 
@@ -562,6 +566,15 @@ class WebView:
     @queue_eval
     def textAlign(self, align_x: TextAlign):
         return f"ctx.textAlign = '{align_x.value}';"
+
+    @queue_eval
+    def smooth(self):
+        return 'ctx.imageSmoothingEnabled = true;'
+
+    @queue_eval
+    def noSmooth(self):
+        # unfortunately there is no way to turn off primitive antialiasing...
+        return 'ctx.imageSmoothingEnabled = false;'
 
     @queue_eval
     def _pushContext(self):
