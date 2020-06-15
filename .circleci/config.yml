@@ -15,21 +15,21 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "test-requirements.txt" }}
+            - v1-dependencies-{{ checksum "pinned-requirements.txt" }}-{{ checksum "test-requirements.txt" }}
             - v1-dependencies-
       - run:
           name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
+            pip-sync pinned-requirements.txt test-requirements.txt
             pip install -e .
-            pip install -r test-requirements.txt
             curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "test-requirements.txt" }}
+          key: v1-dependencies-{{ checksum "pinned-requirements.txt" }}-{{ checksum "test-requirements.txt" }}
       - run:
           name: run tests
           command: |
@@ -56,21 +56,21 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "test-requirements.txt" }}
+            - v1-dependencies-{{ checksum "pinned-requirements.txt" }}-{{ checksum "test-requirements.txt" }}
             - v1-dependencies-
       - run:
           name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
+            pip-sync pinned-requirements.txt test-requirements.txt
             pip install -e .
-            pip install -r test-requirements.txt
             curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "test-requirements.txt" }}
+          key: v1-dependencies-{{ checksum "pinned-requirements.txt" }}-{{ checksum "test-requirements.txt" }}
       - run:
           name: run tests
           command: |

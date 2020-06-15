@@ -1,3 +1,4 @@
+-c pinned-requirements.txt
 mypy
 pylint
 pytest
