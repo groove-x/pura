@@ -129,10 +129,10 @@ pura.add_webview = function(base_url, name, width, height) {
     if (pura.lastWebview) {
         if (name === pura.lastWebview) {
             pura.webviewSelect.value = name;
-            pura.webviewSelect.onchange(null);
+            pura.requestOpenWebview();
         }
     } else if (pura.webviewSelect.length === 1) {
-        pura.webviewSelect.onchange(null);
+        pura.requestOpenWebview();
     }
 };
 
@@ -181,6 +181,14 @@ pura.webviewSelect.onchange = function() {
     document.title = [pura.baseTitle, name, window.location.hostname].join(" • ");
 };
 
+pura.requestOpenWebview = function() {
+    if (!document.hidden) {
+        pura.webviewSelect.onchange(null);
+    } else {
+        window.console.log('deferring webview connection (window hidden)');
+    }
+};
+
 pura.update = function() {
     let pads = navigator.getGamepads ? navigator.getGamepads() :
                    (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
@@ -224,7 +232,7 @@ window.onhashchange = function() {
         if (name !== pura.webviewSelect.value) {
             if (option_exists(pura.webviewSelect, name)) {
                 pura.webviewSelect.value = name;
-                pura.webviewSelect.onchange(null);
+                pura.requestOpenWebview();
                 return;
             }
         }
@@ -234,5 +242,19 @@ window.onhashchange = function() {
     document.title = [pura.baseTitle, pura.webviewSelect.value, window.location.hostname].join(" • ");
 };
 
+// disconnect webview if tab is hidden, reconnect when unhidden
+// This is to avoid filling memory, since the WebSocket API does not have backpressure.
+let handleVisibilityChange = function() {
+    if (document.hidden && pura.webviewSocket) {
+        window.console.log("disconnecting webview (window hidden)");
+        pura.connectionStatus.className = "status in-progress";
+        pura.webviewSocket.close();
+        pura.webviewSocket = null;
+    } else if (!document.hidden && pura.connectionStatus.className !== "status dead") {
+        window.console.log("reconnecting webview (window unhidden)");
+        pura.requestOpenWebview();
+    }
+};
+document.addEventListener("visibilitychange", handleVisibilityChange, false);
 pura.webview_server_subscribe(root_ws_url, true /*is_root*/);
 reqAnimFrame(pura.update);
