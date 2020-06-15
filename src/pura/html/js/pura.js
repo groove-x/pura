@@ -9,6 +9,7 @@ let reqAnimFrame = window.requestAnimationFrame ||
 
 let pura = {};
 
+pura.baseTitle = document.title;
 pura.webviewSocket = null;
 pura.webviewServers = [];
 pura.context = canvas.getContext("2d");
@@ -177,6 +178,7 @@ pura.webviewSelect.onchange = function() {
     pura.webviewSelect.blur();
     pura.lastWebview = name;
     window.location.hash = '#' + name;
+    document.title = [pura.baseTitle, name, window.location.hostname].join(" • ");
 };
 
 pura.update = function() {
@@ -229,8 +231,8 @@ window.onhashchange = function() {
     }
     // empty or unknown name, so revert to current view
     window.location.hash = '#' + pura.webviewSelect.value;
+    document.title = [pura.baseTitle, pura.webviewSelect.value, window.location.hostname].join(" • ");
 };
 
-document.title += " • " + window.location.hostname;
 pura.webview_server_subscribe(root_ws_url, true /*is_root*/);
 reqAnimFrame(pura.update);
