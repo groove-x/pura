@@ -1,3 +1,5 @@
+from collections.abc import Hashable
+
 import pytest
 
 from pura._web_view import _canvas_color, Color
@@ -13,6 +15,11 @@ from pura._web_view import _canvas_color, Color
 def test_color(test_input, expected_rgba):
     c = Color(*test_input)
     assert (c.r, c.g, c.b, c.a) == expected_rgba
+
+
+def test_color_hashable():
+    assert isinstance(Color(255), Hashable)
+    assert Color(128) == Color(128, 128, 128) == Color(128, 128, 128, 255)
 
 
 def test_color_alpha_overwrite_not_allowed():

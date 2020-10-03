@@ -5,9 +5,10 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from functools import wraps, total_ordering
 from itertools import takewhile
+from typing import NamedTuple
 
 import trio
-from attr import attrs, attrib
+from attr import attrs
 from trio_util import AsyncBool, periodic
 from trio_websocket import ConnectionClosed
 
@@ -22,9 +23,8 @@ DEFAULT_BACKGROUND_COLOR = 200
 DEFAULT_FILL_COLOR = 255
 
 
-@attrs(auto_attribs=True, eq=False, slots=True, str=False)
 @total_ordering
-class KeyboardKey:  # pylint: disable=no-member
+class KeyboardKey(NamedTuple):
     """Represents a keyboard input with modifiers
 
     Comparison to string is allowed, and simply compares the `key` attribute.
@@ -40,20 +40,20 @@ class KeyboardKey:  # pylint: disable=no-member
     def __eq__(self, other):
         if isinstance(other, str):
             return self.key == other
-        return tuple(getattr(self, key) for key in self.__slots__) == \
-               tuple(getattr(other, key) for key in self.__slots__)
+        # super() cannot be used
+        # https://stackoverflow.com/questions/61543768/super-in-a-typing-namedtuple-subclass-fails-in-python-3-8
+        return tuple.__eq__(self, other)
 
     def __lt__(self, other):
         if isinstance(other, str):
             return self.key < other
-        return tuple(getattr(self, key) for key in self.__slots__) < \
-               tuple(getattr(other, key) for key in self.__slots__)
+        return tuple.__lt__(self, other)
 
     def __str__(self):
         return self.key
 
 
-@attrs
+@attrs(auto_attribs=True, eq=True, frozen=True, slots=True, init=False)
 class Color:
     """
     Color type based on the Processing API.
@@ -66,46 +66,49 @@ class Color:
         r, g, b, a
 
     All channel values are 8-bit unsigned int.
+    Like Processing color(), values are immutable.
+    As an extension, the raw r/g/b/a channel values are available as attributes.
+
+    TODO: mix alpha in (color_obj, alpha) case as Processing does
+    TODO: support raw input similar to Processing (e.g. 0xFFCC00)
+    TODO: implement colorMode(), red(), green(), etc. functions of Processing
     """
-    _arg0 = attrib(repr=False)  # gray or red channel or other color object
-    _arg1 = attrib(repr=False, default=None)  # green channel or alpha channel
-    _arg2 = attrib(repr=False, default=None)  # blue channel
-    _arg3 = attrib(repr=False, default=None)  # alpha channel
 
-    r = attrib(init=False, default=None)
-    g = attrib(init=False, default=None)
-    b = attrib(init=False, default=None)
-    a = attrib(init=False, default=255)
+    r: int
+    g: int
+    b: int
+    a: int
 
-    def __attrs_post_init__(self):
-        # (have0 is always true)
-        have1 = self._arg1 is not None
-        have2 = self._arg2 is not None
-        have3 = self._arg3 is not None
-        if not (have1 or have2 or have3):
-            self.r = self.g = self.b = self._arg0
-        elif have1 and not (have2 or have3):
-            if isinstance(self._arg0, self.__class__):
-                other = self._arg0
+    def __init__(self, *args):
+        """
+        :param arg0: gray or red channel or other color object
+        :param arg1: green channel or alpha channel
+        :param arg2: blue channel
+        :param arg3: alpha channel
+        """
+        n_args = len(args)
+        if not 1 <= n_args <= 4:
+            raise ValueError('Unexpected number of arguments to Color()')
+        arg0 = args[0]
+        a = 255
+        if n_args == 1:
+            r = g = b = arg0
+        elif n_args == 2:
+            if isinstance(arg0, self.__class__):
+                other = arg0
                 if other.a != 255:
                     raise ValueError('Alpha value not expected in base color')
-                self.r = other.r
-                self.g = other.g
-                self.b = other.b
+                r, g, b = other.r, other.g, other.b
             else:
-                self.r = self.g = self.b = self._arg0
-            self.a = self._arg1
-        elif have1 and have2 and not have3:
-            self.r = self._arg0
-            self.g = self._arg1
-            self.b = self._arg2
-        elif have1 and have2 and have3:
-            self.r = self._arg0
-            self.g = self._arg1
-            self.b = self._arg2
-            self.a = self._arg3
+                r = g = b = arg0
+            a = args[1]
+        elif n_args == 3:
+            r, g, b = args
         else:
-            raise ValueError('Unexpected arguments to color()')
+            r, g, b, a = args
+        # __setattr__() must be used to bypass frozen restriction
+        for name, val in zip('rgba', (r, g, b, a)):
+            object.__setattr__(self, name, val)
 
     def js_string(self):
         """Returns JavaScript color string"""
@@ -126,9 +129,9 @@ class _ShapeState(Enum):
     OPEN = auto()
 
 
-@attrs
+@attrs(auto_attribs=True)
 class Image:
-    _base64_str = attrib()
+    _base64_str: str
 
 
 def _canvas_color(*args):
