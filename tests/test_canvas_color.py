@@ -22,9 +22,8 @@ def test_color_hashable():
     assert Color(128) == Color(128, 128, 128) == Color(128, 128, 128, 255)
 
 
-def test_color_alpha_overwrite_not_allowed():
-    with pytest.raises(ValueError):
-        Color(Color(5, 10, 20, 30), 40)
+def test_color_alpha_mix():
+    assert Color(Color(5, 10, 20, 30), 40) == Color(5, 10, 20, 30 * 40 // 255)
 
 
 @pytest.mark.parametrize("test_input,expected", [

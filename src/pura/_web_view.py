@@ -69,7 +69,6 @@ class Color:
     Like Processing color(), values are immutable.
     As an extension, the raw r/g/b/a channel values are available as attributes.
 
-    TODO: mix alpha in (color_obj, alpha) case as Processing does
     TODO: support raw input similar to Processing (e.g. 0xFFCC00)
     TODO: implement colorMode(), red(), green(), etc. functions of Processing
     """
@@ -94,14 +93,13 @@ class Color:
         if n_args == 1:
             r = g = b = arg0
         elif n_args == 2:
+            a = args[1]
             if isinstance(arg0, self.__class__):
                 other = arg0
-                if other.a != 255:
-                    raise ValueError('Alpha value not expected in base color')
                 r, g, b = other.r, other.g, other.b
+                a = a * other.a // 255
             else:
                 r = g = b = arg0
-            a = args[1]
         elif n_args == 3:
             r, g, b = args
         else:
