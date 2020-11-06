@@ -39,6 +39,7 @@ Processing API and based on the python-trio async/await event loop.
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Framework :: Trio',
     ],
 )
