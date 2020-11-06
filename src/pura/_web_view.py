@@ -24,7 +24,8 @@ DEFAULT_FILL_COLOR = 255
 
 
 @total_ordering
-class KeyboardKey(NamedTuple):
+class KeyboardKey(NamedTuple):  # pylint: disable=inherit-non-class
+                                # https://github.com/PyCQA/pylint/issues/3876
     """Represents a keyboard input with modifiers
 
     Comparison to string is allowed, and simply compares the `key` attribute.
