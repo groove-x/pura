@@ -4,38 +4,45 @@
 #
 #    pip-compile --output-file=test-requirements.txt setup.py test-requirements.in
 #
+aiofiles==0.5.0           # via quart
 astroid==2.4.2            # via pylint
-async-generator==1.10     # via trio, trio-websocket
+async-generator==1.10     # via trio
 attrs==20.2.0             # via outcome, pura (setup.py), pytest, trio
-h11==0.10.0               # via pura (setup.py), wsproto
-idna==2.10                # via trio, yarl
-importlib-metadata==2.0.0  # via pluggy, pytest
+blinker==1.4              # via quart
+click==7.1.2              # via quart
+h11==0.10.0               # via hypercorn, wsproto
+h2==4.0.0                 # via hypercorn
+hpack==4.0.0              # via h2
+hypercorn[trio]==0.11.0   # via pura (setup.py), quart, quart-trio
+hyperframe==6.0.0         # via h2
+idna==2.10                # via trio
 iniconfig==1.0.1          # via pytest
-ipaddress==1.0.23         # via trio-websocket
 isort==5.5.4              # via pylint
+itsdangerous==1.1.0       # via quart
+jinja2==2.11.2            # via quart
 lazy-object-proxy==1.4.3  # via astroid
+markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via pylint
-multidict==4.7.6          # via yarl
 mypy-extensions==0.4.3    # via mypy
 mypy==0.782               # via -r test-requirements.in
 outcome==1.0.1            # via trio
 packaging==20.4           # via pytest
 pluggy==0.13.1            # via pytest
+priority==1.3.0           # via hypercorn
 py==1.9.0                 # via pytest
 pylint==2.6.0             # via -r test-requirements.in
 pyparsing==2.4.7          # via packaging
 pytest==6.1.0             # via -r test-requirements.in
+quart-trio==0.7.0         # via pura (setup.py)
+quart==0.14.1             # via pura (setup.py), quart-trio
 six==1.15.0               # via astroid, packaging
 sniffio==1.1.0            # via trio
 sortedcontainers==2.2.2   # via trio
-toml==0.10.1              # via pylint, pytest
+toml==0.10.1              # via hypercorn, pylint, pytest, quart
 trio-util==0.2.0          # via pura (setup.py)
-trio-websocket==0.8.1     # via pura (setup.py)
-trio==0.17.0              # via pura (setup.py), trio-util, trio-websocket
-typed-ast==1.4.1          # via astroid, mypy
-typing-extensions==3.7.4.3  # via mypy, yarl
+trio==0.17.0              # via hypercorn, pura (setup.py), quart-trio, trio-util
+typed-ast==1.4.1          # via mypy
+typing-extensions==3.7.4.3  # via mypy
+werkzeug==1.0.1           # via quart
 wrapt==1.12.1             # via astroid
-wsaccel==0.6.2            # via trio-websocket
-wsproto==0.14.1           # via trio-websocket
-yarl==1.6.0               # via trio-websocket
-zipp==3.2.0               # via importlib-metadata
+wsproto==0.14.1           # via hypercorn

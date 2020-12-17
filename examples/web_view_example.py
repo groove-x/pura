@@ -1,3 +1,4 @@
+import logging
 import math
 
 import trio
@@ -10,9 +11,21 @@ QUARTER_PI = PI / 4
 TWO_PI = PI * 2
 
 FRAME_RATE = 20
-HTTP_PORT = 8080
-WEBSOCKET_PORT = 8081
-WEBSOCKET2_PORT = 8082
+PORT = 8080
+PORT2 = 8081
+
+
+_logger = logging.getLogger(__name__)
+
+
+def _setup_logging():
+    ch = logging.StreamHandler()
+    ch.setFormatter(logging.Formatter('%(levelname)s:%(name)s:%(message)s'))
+    _logger.addHandler(ch)
+    _logger.setLevel(logging.INFO)
+    _pura_logger = logging.getLogger('pura')
+    _pura_logger.addHandler(ch)
+    _pura_logger.setLevel(logging.INFO)
 
 
 class Clock(WebView):
@@ -207,8 +220,7 @@ class Follow3(WebView):
 async def async_main():
     async with trio.open_nursery() as nursery:
         server = WebViewServer()
-        await nursery.start(server.serve, "Web view test", 'localhost',
-                            HTTP_PORT, WEBSOCKET_PORT)
+        await nursery.start(server.serve, "Web view test", 'localhost', PORT)
         nursery.start_soon(Clock()._serve_webview, server, 200, 100)
         nursery.start_soon(Arcs()._serve_webview, server, 320, 240)
         nursery.start_soon(Shapes()._serve_webview, server, 320, 240)
@@ -216,13 +228,12 @@ async def async_main():
         # Now we'll subscribe clients to an additional webview server
         # (which will be started as another WebViewServer instance below).
         # This will work for servers in another process or machine as well.
-        await server.add_remote('localhost', WEBSOCKET2_PORT)
+        await server.add_remote('localhost', PORT2)
 
         # NOTE: normally there is no reason to have multiple webview servers
         # in the same process.  This is only to demonstrate add_remote().
         server2 = WebViewServer()
-        await nursery.start(server2.serve, "Web view test2", 'localhost',
-                            None, WEBSOCKET2_PORT)
+        await nursery.start(server2.serve, "Web view test2", 'localhost', PORT2)
         nursery.start_soon(Images()._serve_webview, server2, 320, 240)
         # demonstrate a view being registered late
         await trio.sleep(7)
@@ -230,11 +241,7 @@ async def async_main():
 
 
 if __name__ == '__main__':
-    import logging
-
-    logging.info('')  # why is this needed?
-    logging.getLogger().setLevel(logging.INFO)
-
+    _setup_logging()
     try:
         trio.run(async_main)
     except KeyboardInterrupt:

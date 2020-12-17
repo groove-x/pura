@@ -58,13 +58,10 @@ class Foo(WebView):
 
 ...
 
-HTTP_PORT = 8080
-WEBSOCKET_PORT = 8081
 foo = Foo()
 server = WebViewServer()
 async with trio.open_nursery() as nursery:
-    await nursery.start(server.serve, "Web view server", 'localhost',
-                        HTTP_PORT, WEBSOCKET_PORT)
+    await nursery.start(server.serve, "Web view server", 'localhost', 8080)
     nursery.start_soon(foo._serve_webview, server, 320, 240)
 ```
 

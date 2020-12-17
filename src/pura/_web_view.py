@@ -7,10 +7,8 @@ from functools import wraps, total_ordering
 from itertools import takewhile
 from typing import NamedTuple
 
-import trio
 from attr import attrs
 from trio_util import AsyncBool, periodic
-from trio_websocket import ConnectionClosed
 
 TWO_PI = math.pi * 2
 
@@ -271,14 +269,11 @@ class WebView:
     async def _broadcast(peers, msg):
         """Broadcast message to given clients, ignoring connection errors."""
         for peer in peers:
-            try:
-                await peer.send_message(msg)
-            except (ConnectionClosed, trio.BrokenResourceError):
-                pass
+            await peer.send(msg)
 
     async def _handleConnected(self, peer):
         # set up canvas defaults, etc.
-        await peer.send_message(
+        await peer.send(
             f"ctx.lineCap = 'round';"
             f"ctx.font = '{DEFAULT_TEXT_SIZE}px {DEFAULT_TEXT_FONT}';"
             f"ctx.fillStyle = '{_canvas_color(DEFAULT_BACKGROUND_COLOR)}';"
@@ -286,7 +281,7 @@ class WebView:
             f"ctx.fillStyle = '{_canvas_color(DEFAULT_FILL_COLOR)}';"
         )
         for image in self._images:
-            await peer.send_message(self._loadImage(id(image), image._base64_str))
+            await peer.send(self._loadImage(id(image), image._base64_str))
         # peer will be included at start of next draw loop
         self._peers.add(peer)
         self._hasPeers.value = True
