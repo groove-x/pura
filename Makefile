@@ -8,8 +8,8 @@ test:
 .PHONY: lint
 lint:
 	python -m pylint src/ examples/ tests/
-	jshint --show-non-errors src/pura/html/js/
-	tidy -eq src/pura/html/*.html
+	jshint --show-non-errors src/pura/static/js/
+	find src -name '*.html' | xargs tidy -eq
 
 .PHONY: type_check
 type_check:

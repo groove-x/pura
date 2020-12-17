@@ -1,88 +1,66 @@
 import logging
-import pathlib
-from functools import partial
-from string import Template
-from http import HTTPStatus
+from typing import List
 
-import h11
+import hypercorn
+import quart
 import trio
-from trio_websocket import ConnectionClosed
+from quart_trio import QuartTrio
 
-from . import _http_server
-from ._websocket_server import run_websocket_server
-
-logger = logging.getLogger(__name__)
-
-
-def local_to_abs_path(path):
-    """Returns absolute path given script-local path."""
-    parent = pathlib.Path(__file__).parent
-    return parent / path
-
-
-HTML_PATH = local_to_abs_path('html/')
-
-
-# TODO: run HTTP and websocket on the same port
-# TODO: use hypercorn for HTTP server (rather than hacked h11 sample)
-#   Example at https://github.com/python-trio/snekomatic/blob/1013a7b875ff8477c2db2b91d48faf938c4f8d81/snekomatic/app.py
-#   It may also be possible to do websocket with hypercorn, replacing
-#   trio-websocket.  See https://pgjones.dev/blog/http-1-2-3-2019/.
-async def http_request_handler(server, request, *, title=None,
-                               http_port=None, ws_port=None):
-    target = request.target.decode('ascii')
-    request_body = ''
-    async for part in _http_server.receive_body(server):
-        request_body += part  # pylint: disable=consider-using-join
-    if target == '/':
-        path = trio.Path(HTML_PATH / 'index.html')
-        template = Template(await path.read_text())
-        body = template.substitute(
-            title=title, ws_url_path='/ws/',
-            http_port=http_port, ws_port=ws_port)
-        await _http_server.send_simple_response(
-            server, int(HTTPStatus.OK), 'text/html; charset=utf-8',
-            body.encode('utf-8'))
-    elif target == '/js/pura.js':
-        path = trio.Path(HTML_PATH / target.lstrip('/'))
-        body = await path.read_text()
-        await _http_server.send_simple_response(
-            server, int(HTTPStatus.OK), 'application/javascript; charset=utf-8',
-            body.encode('utf-8'))
-    else:
-        raise h11.RemoteProtocolError(
-            f'{target} not found', int(HTTPStatus.NOT_FOUND))
+_logger = logging.getLogger(__name__)
 
 
 class WebViewServer:
     """Server for web views"""
 
     def __init__(self):
-        self._peers = []
+        self._peers: List[quart.Websocket] = []
         self.webviews = []
-        self.remote_webview_servers = []  # (host, ws_port)
+        self.remote_webview_servers = []  # (host, port)
         self.handlers_by_path = {}
 
-    async def serve(self, title, host, http_port, ws_port, *,
+    async def serve(self, title, host, port, *,
                     task_status=trio.TASK_STATUS_IGNORED):
         """Web view server task."""
-        async with trio.open_nursery() as nursery:
-            if http_port:
-                # HTTP server
-                http_handler = partial(
-                    http_request_handler, title=title, http_port=http_port,
-                    ws_port=ws_port)
-                http_serve = partial(
-                    _http_server.http_serve, request_handler=http_handler,
-                    debug=False)
-                logger.info(f'listening on http://{host}:{http_port}')
-                await nursery.start(
-                    partial(trio.serve_tcp, http_serve, http_port, host=host))
 
-            # websocket server
+        web_app = QuartTrio('pura')
+
+        @web_app.route('/')
+        async def _index():
+            return await quart.render_template('index.html', title=title)
+
+        @web_app.route('/js/<path:path>')
+        async def _js(path):
+            return await web_app.send_static_file(f'js/{path}')
+
+        @web_app.websocket('/ws/<path:path>', endpoint='root-ws')
+        async def _ws_connect(path):
+            websocket: quart.Websocket = quart.websocket._get_current_object()
+
+            path = websocket.full_path
+            # print(path, 'connected')
+            handler = self.handlers_by_path.get(path)
+            if handler is None:
+                _logger.warning('webview server: no handler for path "%s"', path)
+                return f'path "{path}" not found', 1008
+            await handler._handleConnected(websocket)
+
+            try:
+                while True:
+                    message = await websocket.receive()
+                    # print(path, 'received', message)
+                    handler._handleMessage(message)
+            finally:
+                # print(path, 'closed')
+                handler._handleClose(websocket)
+
+        async with trio.open_nursery() as nursery:
             self.handlers_by_path['/ws/main'] = self
-            await nursery.start(run_websocket_server, host, ws_port,
-                                self.handlers_by_path)
+            urls = await nursery.start(hypercorn.trio.serve, web_app,
+                                       hypercorn.Config.from_mapping(
+                                           bind=[f'{host}:{port}'],
+                                           loglevel='WARNING',
+                                       ))
+            _logger.info(f'listening on {urls[0]}')
             task_status.started()
 
     @staticmethod
@@ -98,41 +76,38 @@ class WebViewServer:
             self._add_webview_message(webview, width, height))
 
     @staticmethod
-    def _add_remote_message(host, ws_port):
+    def _add_remote_message(host, port):
         if host:
-            param = f'"ws://{host}:{ws_port}/ws/"'
+            param = f'"ws://{host}:{port}/ws/"'
         else:
             # replace port in the client-side URL
-            param = f'ws_url.replace(/:[0-9]+[/]/,":{ws_port}/")'
+            param = f'ws_url.replace(/:[0-9]+[/]/,":{port}/")'
         return f'pura.webview_server_subscribe({param});'
 
-    async def add_remote(self, host, ws_port):
+    async def add_remote(self, host, port):
         """
         Make a remote webview server's views available to clients of this server
 
         :param host: remote webview server host (None for same host)
-        :param ws_port: remote webview server websocket port
+        :param port: remote webview server port
         """
-        self.remote_webview_servers.append((host, ws_port))
-        await self._sendAllPeers(self._add_remote_message(host, ws_port))
+        self.remote_webview_servers.append((host, port))
+        await self._sendAllPeers(self._add_remote_message(host, port))
 
     # TODO: shared with WebView-- move these methods to a base class
     async def _sendAllPeers(self, msg):
         for peer in self._peers:
-            try:
-                await peer.send_message(msg)
-            except (ConnectionClosed, trio.BrokenResourceError):
-                pass
+            await peer.send(msg)
 
-    async def _handleConnected(self, peer):
+    async def _handleConnected(self, peer: quart.Websocket):
         self._peers.append(peer)
         for webview, width, height in self.webviews:
-            await peer.send_message(
+            await peer.send(
                 self._add_webview_message(webview, width, height))
-        for host, ws_port in self.remote_webview_servers:
-            await peer.send_message(self._add_remote_message(host, ws_port))
+        for host, port in self.remote_webview_servers:
+            await peer.send(self._add_remote_message(host, port))
 
-    def _handleClose(self, peer):
+    def _handleClose(self, peer: quart.Websocket):
         self._peers.remove(peer)
 
     def _handleMessage(self, msg):
