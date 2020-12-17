@@ -109,6 +109,7 @@ pura.swap = function() {
 };
 
 pura.eval = function(s, ctx, ws_url) {
+    // (args appear unused but may be accessed by the evaluated code)
     eval(s);
 };
 
