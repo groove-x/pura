@@ -18,21 +18,19 @@ class WebViewServer:
         self.remote_webview_servers = []  # (host, port)
         self.handlers_by_path = {}
 
-    async def serve(self, title, host, port, *,
-                    task_status=trio.TASK_STATUS_IGNORED):
-        """Web view server task."""
+    def get_blueprint(self, title):
+        blueprint = quart.Blueprint('webviews', __name__,
+                                    static_folder='static/')
 
-        web_app = QuartTrio('pura')
-
-        @web_app.route('/')
+        @blueprint.route('/')
         async def _index():
             return await quart.render_template('index.html', title=title)
 
-        @web_app.route('/js/<path:path>')
+        @blueprint.route('/js/<path:path>')
         async def _js(path):
-            return await web_app.send_static_file(f'js/{path}')
+            return await blueprint.send_static_file(f'js/{path}')
 
-        @web_app.websocket('/ws/<path:path>', endpoint='root-ws')
+        @blueprint.websocket('/ws/<path:path>', endpoint='root-ws')
         async def _ws_connect(path):
             websocket: quart.Websocket = quart.websocket._get_current_object()
 
@@ -58,6 +56,14 @@ class WebViewServer:
                 # print(path, 'closed')
                 handler._handleClose(websocket)
 
+        return blueprint
+
+    async def serve(self, title, host, port, *,
+                    task_status=trio.TASK_STATUS_IGNORED):
+        """Web view server task."""
+
+        web_app = QuartTrio('pura')
+        web_app.register_blueprint(self.get_blueprint(title))
         async with trio.open_nursery() as nursery:
             self.handlers_by_path['/ws/main'] = self
             urls = await nursery.start(hypercorn.trio.serve, web_app,
