@@ -7,7 +7,9 @@ Processing API and based on the python-trio async/await event loop.
 
 During development it's productive to have visualizations that let
 you see and alter the internal state of your program.  Pura lets
-you create these easily along side your regular code.
+you create these easily along side your regular code, and view them
+remotely from a web browser.  This is especially useful when the device
+running your Python program doesn't otherwise have a display.
 
 Points:
  * a program can register one or more animated graphical views
