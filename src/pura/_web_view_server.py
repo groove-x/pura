@@ -15,8 +15,8 @@ class WebViewServer:
     def __init__(self):
         self._peers: List[quart.Websocket] = []
         self.webviews = []  # (name, ctx)
-        self.remote_webview_servers = []  # (host, port)
-        self.handlers_by_path = {}
+        self.remote_webview_servers = []  # url
+        self.handlers_by_path = {'main': self}
 
     def get_blueprint(self, title):
         blueprint = quart.Blueprint('webviews', __name__,
@@ -30,18 +30,18 @@ class WebViewServer:
         async def _js(path):
             return await blueprint.send_static_file(f'js/{path}')
 
-        @blueprint.websocket('/ws/<path:path>', endpoint='root-ws')
-        async def _ws_connect(path):
+        @blueprint.websocket('/<path:path>')
+        async def _ws(path):
             websocket: quart.Websocket = quart.websocket._get_current_object()
 
-            path = websocket.full_path
             # print(path, 'connected')
             handler = self.handlers_by_path.get(path)
             if handler is None:
-                _logger.warning('webview server: no handler for path "%s"', path)
+                full_path = websocket.full_path
+                _logger.warning('webview server: no handler for path "%s"', full_path)
                 # TODO: close websocket with error (https://gitlab.com/pgjones/quart/-/issues/383)
                 #await websocket.accept()
-                #await websocket.close(1008, reason=f'path "{path}" not found')
+                #await websocket.close(1008, reason=f'path "{full_path}" not found')
                 return
             # TODO: handle closed connection silently?  But quart-trio gives us no way to
             #   discern, see https://gitlab.com/pgjones/quart-trio/-/issues/19#note_496172565.
@@ -65,7 +65,6 @@ class WebViewServer:
         web_app = QuartTrio('pura')
         web_app.register_blueprint(self.get_blueprint(title))
         async with trio.open_nursery() as nursery:
-            self.handlers_by_path['/ws/main'] = self
             urls = await nursery.start(hypercorn.trio.serve, web_app,
                                        hypercorn.Config.from_mapping(
                                            bind=[f'{host}:{port}'],
@@ -80,7 +79,7 @@ class WebViewServer:
 
     # TODO: support unregistering views
     async def add_webview(self, name, ctx):
-        path = f'/ws/{name}'
+        path = f'{name}'
         assert path not in self.handlers_by_path
         self.handlers_by_path[path] = ctx
         self.webviews.append((name, ctx))
@@ -88,23 +87,17 @@ class WebViewServer:
             self._add_webview_message(name, ctx))
 
     @staticmethod
-    def _add_remote_message(host, port):
-        if host:
-            param = f'"ws://{host}:{port}/ws/"'
-        else:
-            # replace port in the client-side URL
-            param = f'ws_url.replace(/:[0-9]+[/]/,":{port}/")'
-        return f'pura.webview_server_subscribe({param});'
+    def _add_remote_message(url):
+        return f'pura.webview_server_subscribe({repr(url)});'
 
-    async def add_remote(self, host, port):
+    async def add_remote(self, url):
         """
         Make a remote webview server's views available to clients of this server
 
-        :param host: remote webview server host (None for same host)
-        :param port: remote webview server port
+        :param url: remote webviews URL
         """
-        self.remote_webview_servers.append((host, port))
-        await self._sendAllPeers(self._add_remote_message(host, port))
+        self.remote_webview_servers.append(url)
+        await self._sendAllPeers(self._add_remote_message(url))
 
     # TODO: shared with WebView-- move these methods to a base class
     async def _sendAllPeers(self, msg):
@@ -116,8 +109,8 @@ class WebViewServer:
         for name, ctx in self.webviews:
             await peer.send(
                 self._add_webview_message(name, ctx))
-        for host, port in self.remote_webview_servers:
-            await peer.send(self._add_remote_message(host, port))
+        for url in self.remote_webview_servers:
+            await peer.send(self._add_remote_message(url))
 
     def _handleClose(self, peer: quart.Websocket):
         self._peers.remove(peer)

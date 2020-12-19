@@ -9,7 +9,7 @@ test:
 lint:
 	python -m pylint src/ examples/ tests/
 	jshint --show-non-errors src/pura/static/js/
-	find src -name '*.html' | xargs tidy -eq
+	@find src -name '*.html' | xargs -iXX sh -c 'echo tidy XX; sed s/{{.*}}/abc/ < XX | tidy -eq'
 
 .PHONY: type_check
 type_check:

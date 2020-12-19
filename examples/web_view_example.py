@@ -317,7 +317,7 @@ async def async_main():
         # Now we'll subscribe clients to an additional webview server
         # (which will be started as another WebViewServer instance below).
         # This will work for servers in another process or machine as well.
-        await server.add_remote('localhost', PORT2)
+        await server.add_remote(f'ws://localhost:{PORT2}/')
 
         # NOTE: normally there is no reason to have multiple webview servers
         # in the same process.  This is only to demonstrate add_remote().
