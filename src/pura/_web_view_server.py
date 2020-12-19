@@ -16,7 +16,7 @@ class WebViewServer:
         self._peers: List[quart.Websocket] = []
         self.webviews = []  # (name, ctx)
         self.remote_webview_servers = []  # url
-        self.handlers_by_path = {'main': self}
+        self.handlers_by_path = {'_main': self}
 
     def get_blueprint(self, title):
         blueprint = quart.Blueprint('webviews', __name__,

@@ -37,7 +37,7 @@ pura.pendingCommands = [];  // to queue commands during image loading
 //
 // TODO: fix race conditions due to retry handling
 pura.webview_server_subscribe = function(base_url, is_root) {
-    if (!is_root && pura.webviewServers.some(ws => ws.url === base_url + "main")) {
+    if (!is_root && pura.webviewServers.some(ws => ws.url === base_url + "_main")) {
         return;
     }
 
@@ -46,7 +46,7 @@ pura.webview_server_subscribe = function(base_url, is_root) {
     }
 
     window.console.info('webview server subscribe', base_url);
-    let ws = new WebSocket(base_url + "main");
+    let ws = new WebSocket(base_url + "_main");
     let open_success = false;
 
     ws.onopen = function() {
