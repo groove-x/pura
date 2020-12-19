@@ -11,7 +11,6 @@ astroid==2.5.3
 async-generator==1.10
     # via
     #   trio
-    #   trio-util
 attrs==20.3.0
     # via
     #   outcome
@@ -89,14 +88,11 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   quart
-trio-util==0.5.0
-    # via pura (setup.py)
 trio==0.18.0
     # via
     #   hypercorn
     #   pura (setup.py)
     #   quart-trio
-    #   trio-util
 typed-ast==1.4.3
     # via mypy
 typing-extensions==3.7.4.3

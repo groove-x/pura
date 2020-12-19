@@ -8,8 +8,8 @@ from functools import wraps, total_ordering
 from itertools import takewhile
 from typing import NamedTuple
 
+import trio
 from attr import attrs
-from trio_util import AsyncBool, periodic
 
 TWO_PI = math.pi * 2
 
@@ -274,7 +274,7 @@ class DrawContext:
         self._draw_fn = draw_fn
         self._frame_rate = frame_rate
         self._peers = set()
-        self._hasPeers = AsyncBool()
+        self._hasPeers = trio.Event()
         # NOTE: empty string is used to force a batching boundary
         self._sendQueue = []
         self._receiveQueue = []  # oldest to newest
@@ -308,11 +308,12 @@ class DrawContext:
             await peer.send(self._loadImage(id(image), image._base64_str))
         # peer will be included at start of next draw loop
         self._peers.add(peer)
-        self._hasPeers.value = True
+        self._hasPeers.set()
 
     def _handleClose(self, peer):
         self._peers.remove(peer)
-        self._hasPeers.value = len(self._peers) > 0
+        if not self._peers:
+            self._hasPeers = trio.Event()
 
     async def _handleMessage(self, peer, msg):
         """Process incoming JSON message from webview client."""
@@ -363,8 +364,10 @@ class DrawContext:
             logger.warning(f"unhandled message type: {msg['type']}")
 
     async def _run_draw_loop(self):
-        async for _ in periodic(1 / self._frame_rate):
-            await self._hasPeers.wait_value(True)
+        period = 1 / self._frame_rate
+        while True:
+            t_start = trio.current_time()
+            await self._hasPeers.wait()
             peers = self._peers.copy()
             self.inputEvents.clear()
             for msg in self._receiveQueue:
@@ -391,6 +394,8 @@ class DrawContext:
                     break
             self._sendQueue.clear()
             self.frameCount += 1
+            user_elapsed = trio.current_time() - t_start
+            await trio.sleep(max(0, period - user_elapsed))
 
     @queue_eval
     def background(self, *args):

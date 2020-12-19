@@ -30,7 +30,6 @@ Processing API and based on the python-trio async/await event loop.
         'quart >= 0.14.0',
         'quart_trio >= 0.7.0',
         'trio >= 0.11.0',
-        'trio-util >= 0.1.0',
     ],
     python_requires='>=3.7',
     classifiers=[
