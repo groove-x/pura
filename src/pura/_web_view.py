@@ -574,15 +574,19 @@ class WebView:
             '}'
         )
 
+    # TODO: number input, other call modes
     @queue_eval
     def text(self, t, x, y):
-        return f"ctx.fillText('{t}', {x}, {y});"
+        assert isinstance(t, str)
+        # string repr() should be fine as JavaScript, and is 2x faster than json.dumps()
+        return f"ctx.fillText({repr(t)}, {x}, {y});"
 
     @queue_eval
     def textSize(self, v):
         # e.g. "12px Arial"
         return f"ctx.font = '{v}px ' + ctx.font.split(' ')[1];"
 
+    # TODO: size parameter
     @queue_eval
     def textFont(self, v):
         return f"ctx.font = ctx.font.split(' ')[0] + ' {v}';"
