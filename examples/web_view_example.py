@@ -3,7 +3,7 @@ import math
 
 import trio
 
-from pura import WebView, WebViewServer
+from pura import WebView, WebViewServer, TextAlign
 
 PI = math.pi
 HALF_PI = PI / 2
@@ -183,10 +183,43 @@ class Images(WebView):
             self.unloadImage(img2)
 
 
-class Follow3(WebView):
+class Words(WebView):
+    """Based on Processing "Words" example"""
 
     def __init__(self):
-        super().__init__(webview_name='follow3', frame_rate=FRAME_RATE)
+        super().__init__(frame_rate=FRAME_RATE)
+
+    def draw(self):
+        self.background(102)
+        self.textFont('Georgia')
+        self.textSize(24)
+        self.textAlign(TextAlign.RIGHT)
+        self.drawType(self.width * 0.25)
+        self.textAlign(TextAlign.CENTER)
+        self.drawType(self.width * 0.5)
+        self.textAlign(TextAlign.LEFT)
+        self.drawType(self.width * 0.75)
+
+    def drawType(self, x):
+        self.line(x, 0, x, 65)
+        self.line(x, 255, x, self.height)
+        self.fill(0)
+        self.text("ichi", x, 95)
+        self.fill(51)
+        self.text("ni", x, 130)
+        self.fill(204)
+        self.text("san", x, 165)
+        self.fill(255)
+        self.text("shi", x, 210)
+        # test quote escaping
+        self.text("'\"`", x, 245)
+
+
+class Follow3(WebView):
+    """Based on Processing "Follow3" example"""
+
+    def __init__(self):
+        super().__init__(webview_name='Follow3', frame_rate=FRAME_RATE)
         self.segLength = 15
         num_segments = 15
         self.x = [0.0] * num_segments
@@ -224,6 +257,7 @@ async def async_main():
         nursery.start_soon(Clock()._serve_webview, server, 200, 100)
         nursery.start_soon(Arcs()._serve_webview, server, 320, 240)
         nursery.start_soon(Shapes()._serve_webview, server, 320, 240)
+        nursery.start_soon(Words()._serve_webview, server, 640, 360)
 
         # Now we'll subscribe clients to an additional webview server
         # (which will be started as another WebViewServer instance below).
