@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import numbers
 from contextlib import contextmanager
 from enum import Enum, auto
 from functools import wraps, total_ordering
@@ -574,10 +575,14 @@ class WebView:
             '}'
         )
 
-    # TODO: number input, other call modes
     @queue_eval
     def text(self, t, x, y):
-        assert isinstance(t, str)
+        if isinstance(t, str):
+            pass
+        elif isinstance(t, numbers.Number):  # NOTE: this check is relatively slow
+            t = str(t)
+        else:
+            raise TypeError('expected string or number')
         # string repr() should be fine as JavaScript, and is 2x faster than json.dumps()
         return f"ctx.fillText({repr(t)}, {x}, {y});"
 
