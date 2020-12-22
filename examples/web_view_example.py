@@ -202,7 +202,7 @@ class Words(WebView):
 
     def drawType(self, x):
         self.line(x, 0, x, 65)
-        self.line(x, 255, x, self.height)
+        self.line(x, 290, x, self.height)
         self.fill(0)
         self.text("ichi", x, 95)
         self.fill(51)
@@ -213,6 +213,8 @@ class Words(WebView):
         self.text("shi", x, 210)
         # test quote escaping
         self.text("'\"`", x, 245)
+        # test number type
+        self.text(1.23, x, 280)
 
 
 class Follow3(WebView):
