@@ -41,7 +41,10 @@ class WebViewServer:
             handler = self.handlers_by_path.get(path)
             if handler is None:
                 _logger.warning('webview server: no handler for path "%s"', path)
-                return f'path "{path}" not found', 1008
+                # TODO: close websocket with error (https://gitlab.com/pgjones/quart/-/issues/383)
+                #await websocket.accept()
+                #await websocket.close(1008, reason=f'path "{path}" not found')
+                return
             await handler._handleConnected(websocket)
 
             try:
