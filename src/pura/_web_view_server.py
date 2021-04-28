@@ -14,7 +14,7 @@ class WebViewServer:
 
     def __init__(self):
         self._peers: List[quart.Websocket] = []
-        self.webviews = []
+        self.webviews = []  # (name, ctx)
         self.remote_webview_servers = []  # (host, port)
         self.handlers_by_path = {}
 
@@ -69,16 +69,16 @@ class WebViewServer:
             task_status.started()
 
     @staticmethod
-    def _add_webview_message(webview, width, height):
-        return f'pura.add_webview(ws_url,"{webview.name}",{width},{height});'
+    def _add_webview_message(name, ctx):
+        return f'pura.add_webview(ws_url,"{name}",{ctx.width},{ctx.height});'
 
-    async def add_webview(self, webview, width, height):
-        path = f'/ws/{webview.name}'
+    async def add_webview(self, name, ctx):
+        path = f'/ws/{name}'
         assert path not in self.handlers_by_path
-        self.handlers_by_path[path] = webview
-        self.webviews.append((webview, width, height))
+        self.handlers_by_path[path] = ctx
+        self.webviews.append((name, ctx))
         await self._sendAllPeers(
-            self._add_webview_message(webview, width, height))
+            self._add_webview_message(name, ctx))
 
     @staticmethod
     def _add_remote_message(host, port):
@@ -106,9 +106,9 @@ class WebViewServer:
 
     async def _handleConnected(self, peer: quart.Websocket):
         self._peers.append(peer)
-        for webview, width, height in self.webviews:
+        for name, ctx in self.webviews:
             await peer.send(
-                self._add_webview_message(webview, width, height))
+                self._add_webview_message(name, ctx))
         for host, port in self.remote_webview_servers:
             await peer.send(self._add_remote_message(host, port))
 

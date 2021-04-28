@@ -192,7 +192,36 @@ def queue_eval_optional(func):
 #     See html/js/pura.js for the implementation.
 
 class WebView:
-    """Remote visualization agent
+    """Remote visualization agent"""
+
+    def __init__(self, name, *, size, draw_fn, frame_rate=5):
+        self.name = name
+        self._ctx = DrawContext(size=size, draw_fn=draw_fn, frame_rate=frame_rate)
+
+    @property
+    def width(self):
+        return self._ctx.width
+
+    @property
+    def height(self):
+        return self._ctx.height
+
+    async def serve(self, webview_server):
+        """Make webview available on the given webview server."""
+        await webview_server.add_webview(self.name, self._ctx)
+        await self._ctx._run_draw_loop()
+
+    def loadImage(self, base64_str):
+        """Returns image reference"""
+        return self._ctx.loadImage(base64_str)
+
+    def unloadImage(self, image):
+        """Unloads image"""
+        return self._ctx.unloadImage(image)
+
+
+class DrawContext:
+    """webview draw context
 
     Mimics a subset of the Processing Python graphics API.
     Notable differences:
@@ -228,11 +257,6 @@ class WebView:
           other drawing primitives.  Unlike Processing 3, it's bound to the
           draw context.
 
-    Deriving classes need to override the draw() method.  It's only called
-    when there is an active client connection.
-
-    To make the webview available, call _serve_webview().
-
     inputEvents "event_name: value":
         keydown/keyup: KeyboardKey
         mousedown/mouseup: (x, y)
@@ -240,8 +264,7 @@ class WebView:
 
     # pylint: disable=no-self-use
 
-    def __init__(self, name, size, draw_fn, frame_rate=5):
-        self.name = name
+    def __init__(self, *, size, draw_fn, frame_rate):
         self.width, self.height = size
         self._draw_fn = draw_fn
         self._frame_rate = frame_rate
@@ -364,11 +387,6 @@ class WebView:
             self._sendQueue.clear()
             self.frameCount += 1
 
-    async def serve(self, webview_server):
-        """Make webview available on the given webview server."""
-        await webview_server.add_webview(self, self.width, self.height)
-        await self._run_draw_loop()
-
     @queue_eval
     def background(self, *args):
         return (
@@ -386,7 +404,7 @@ class WebView:
     def strokeWeight(self, x):
         return f"ctx.lineWidth = {x};"
 
-    @ queue_eval
+    @queue_eval
     def strokeCap(self, cap: StrokeCap):
         return f"ctx.lineCap = '{cap.value}';"
 
@@ -617,10 +635,14 @@ class WebViewMixin:
     """Remote visualization mixin
 
       * the host class inherits a single attribute, `webview`, and
-        must implement draw()
+        must implement draw().
       * by default, the webview name is derived from the host class name
       * constructor kwargs that begin with 'webview_' are passed to the
         WebView constructor after removing the prefix
+
+    draw() is only called when there is an active client connection.
+
+    To make the webview available, call obj.webview.serve().
     """
 
     def __init__(self, **kwargs):
@@ -631,7 +653,5 @@ class WebViewMixin:
         self.webview = WebView(webview_kwargs.pop('name'),
                                draw_fn=self.draw, **webview_kwargs)
 
-    # TODO: distinct WebView and WebViewContext classes.  Only the latter
-    #   has API accessible to draw().
-    def draw(self, ctx: WebView):
+    def draw(self, ctx: DrawContext):
         raise NotImplementedError
