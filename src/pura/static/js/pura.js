@@ -143,8 +143,10 @@ let webview_onopen = function(e) {
     canvas.onmousedown = pura.input_handler;
     canvas.onmouseup   = pura.input_handler;
     canvas.onmousemove = pura.input_handler;
+    canvas.onmouseout  = pura.input_handler;
     //canvas.onclick     = pura.input_handler;
     canvas.ondblclick  = pura.input_handler;
+    canvas.oncontextmenu = function() { return false; };
 
     document.body.onkeydown  = pura.input_handler;
     document.body.onkeyup    = pura.input_handler;

@@ -249,7 +249,7 @@ class WebView:
         self._hasPeers = AsyncBool()
         # NOTE: empty string is used to force a batching boundary
         self._sendQueue = []
-        self._receiveQueue = []
+        self._receiveQueue = []  # oldest to newest
         self._shapeState = _ShapeState.NONE
         self._images = []
         self._is_draw_context = False
@@ -305,11 +305,14 @@ class WebView:
         elif msg_type == 'mousedown':
             self.mousePressed = True
             x, y = int(msg['x']), int(msg['y'])
+            # TODO: include button ID with mousedown/mouseup
             self.inputEvents.append(('mousedown', (x, y)))
         elif msg_type == 'mouseup':
             self.mousePressed = False
             x, y = int(msg['x']), int(msg['y'])
             self.inputEvents.append(('mouseup', (x, y)))
+        elif msg_type == 'mouseout':
+            self.mousePressed = False
         elif msg_type == 'dblclick':
             x, y = int(msg['x']), int(msg['y'])
             self.inputEvents.append(('dblclick', (x, y)))
@@ -345,8 +348,9 @@ class WebView:
             await self._hasPeers.wait_value(True)
             peers = self._peers.copy()
             self.inputEvents.clear()
-            while self._receiveQueue:
-                self._handleDeferredMessage(self._receiveQueue.pop())
+            for msg in self._receiveQueue:
+                self._handleDeferredMessage(msg)
+            self._receiveQueue.clear()
             self._is_draw_context = True
             with self.pushContext():
                 self.draw()
