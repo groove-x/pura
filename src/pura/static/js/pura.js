@@ -3,9 +3,11 @@
 /* jshint -W061 */
 /* global canvas, root_ws_url */
 
+/*
 let reqAnimFrame = window.requestAnimationFrame ||
                    window.mozRequestAnimationFrame ||
                    window.webkitRequestAnimationFrame;
+*/
 
 let pura = {};
 
@@ -204,37 +206,6 @@ pura.requestOpenWebview = function() {
     }
 };
 
-pura.update = function() {
-    let pads = navigator.getGamepads ? navigator.getGamepads() :
-                   (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
-
-    let pad = pads[0];
-    if(pad) {
-        let buttons = [];
-        for(let i = 0; i < pad.buttons.length; i++) {
-            let val = pad.buttons[i];
-            let pressed = val === 1.0;
-            if (typeof(val) === "object") {
-                pressed = val.pressed;
-                val     = val.value;
-            }
-            buttons[i] = val;
-        }
-        if (pura.webviewSocket !== null) {
-            let msg = {
-                type: "gamepad",
-                name: pad.id,
-                buttons: buttons,
-                axes: pad.axes
-            };
-            if (pura.isConnected()) {
-                pura.webviewSocket.send(JSON.stringify(msg));
-            }
-        }
-    }
-    reqAnimFrame(pura.update);
-};
-
 let option_exists = function(selectElement, optionValue) {
     return !!Array.prototype.find.call(
         selectElement.options, option => option.value === optionValue);
@@ -272,4 +243,3 @@ let handleVisibilityChange = function() {
 };
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
 pura.webview_server_subscribe(root_ws_url, true /*is_root*/);
-reqAnimFrame(pura.update);

@@ -261,9 +261,6 @@ class WebView:
         self.mouseY = 0
         self.keyPressed = False
         self.key = ''
-        self.gamepad_name = ""
-        self.gamepad_buttons = []
-        self.gamepad_axes = []
         self.inputEvents = []
 
     @staticmethod
@@ -336,10 +333,6 @@ class WebView:
                 shift_modifier=msg['shift_key']
             )
             self.inputEvents.append(('keyup', key))
-        elif msg_type == 'gamepad':
-            self.gamepad_name = msg["name"]
-            self.gamepad_buttons = msg["buttons"]
-            self.gamepad_axes = msg["axes"]
         else:
             logger.warning(f"unhandled message type: {msg['type']}")
 
