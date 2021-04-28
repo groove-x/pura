@@ -45,6 +45,8 @@ class WebViewServer:
                 #await websocket.accept()
                 #await websocket.close(1008, reason=f'path "{path}" not found')
                 return
+            # TODO: handle closed connection silently?  But quart-trio gives us no way to
+            #   discern, see https://gitlab.com/pgjones/quart-trio/-/issues/19#note_496172565.
             await handler._handleConnected(websocket)
 
             try:
