@@ -72,6 +72,7 @@ class WebViewServer:
     def _add_webview_message(name, ctx):
         return f'pura.add_webview(ws_url,"{name}",{ctx.width},{ctx.height});'
 
+    # TODO: support unregistering views
     async def add_webview(self, name, ctx):
         path = f'/ws/{name}'
         assert path not in self.handlers_by_path

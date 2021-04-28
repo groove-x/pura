@@ -264,7 +264,12 @@ class DrawContext:
 
     # pylint: disable=no-self-use
 
-    def __init__(self, *, size, draw_fn, frame_rate):
+    def __init__(self, *, size, frame_rate, draw_fn):
+        """
+        :param size: sequence of width, height
+        :param frame_rate: rate of draw calls when the view is active
+        :param draw_fn: draw function called each frame when the view is active
+        """
         self.width, self.height = size
         self._draw_fn = draw_fn
         self._frame_rate = frame_rate
@@ -646,6 +651,12 @@ class WebViewMixin:
     """
 
     def __init__(self, **kwargs):
+        """
+        :param webview_name: display name of the view
+        :param webview_size: sequence of width, height
+        :param webview_frame_rate: optional rate of draw calls when the
+          view is active (default 5)
+        """
         webview_kwargs = {k[len('webview_'):]: v for k, v in kwargs.items()
                           if k.startswith('webview_')}
         if webview_kwargs.get('name') is None:

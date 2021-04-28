@@ -70,8 +70,8 @@ async with trio.open_nursery() as nursery:
     nursery.start_soon(foo.webview.serve, server)
 ```
 
-See the project [`examples/`](examples/) directory, as well as the
-`WebView` and `WebViewMixin` class documentation.
+See the project [`examples/`](examples/) directory, as well as help
+documentation on the `pura` package and individual classes.
 
 Note that, since it's unlikely that Pura can be used as-is in another
 project, the package has not been released to pypi.  Please file an
