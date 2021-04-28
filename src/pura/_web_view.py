@@ -420,7 +420,9 @@ class WebView:
         return f'ctx.rotate({a});'
 
     @queue_eval
-    def scale(self, x, y):
+    def scale(self, x, y=None):
+        if y is None:
+            y = x
         return f'ctx.scale({x}, {y});'
 
     # TODO: support kind option
