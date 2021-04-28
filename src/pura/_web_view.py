@@ -186,9 +186,9 @@ def queue_eval_optional(func):
 #     See html/js/pura.js for the implementation.
 
 class WebView:
-    """Remote visualization mixin
+    """Remote visualization agent
 
-    Mimicks a subset of the Processing Python graphics API.
+    Mimics a subset of the Processing Python graphics API.
     Notable differences:
 
         * there is no setup() hook
@@ -230,20 +230,14 @@ class WebView:
     inputEvents "event_name: value":
         keydown/keyup: KeyboardKey
         mousedown/mouseup: (x, y)
-
-    TODO: The mixin should only add a single attribute like "webview" containing
-        the webview context, which would be passed to draw() for convenience.
     """
 
     # pylint: disable=no-self-use
 
-    def __init__(self, webview_name=None, frame_rate=5, **kwargs):
-        super().__init__(**kwargs)
-        if webview_name is None:
-            webview_name = self.__class__.__name__
-        if '.' in webview_name:
-            webview_name = webview_name.split('.')[-1]
-        self._webview_name = webview_name
+    def __init__(self, name, size, draw_fn, frame_rate=5):
+        self.name = name
+        self.width, self.height = size
+        self._draw_fn = draw_fn
         self._frame_rate = frame_rate
         self._peers = set()
         self._hasPeers = AsyncBool()
@@ -253,8 +247,6 @@ class WebView:
         self._shapeState = _ShapeState.NONE
         self._images = []
         self._is_draw_context = False
-        self.width = 0
-        self.height = 0
         self.frameCount = 0
         self.mousePressed = False
         self.mouseX = 0
@@ -346,7 +338,7 @@ class WebView:
             self._receiveQueue.clear()
             self._is_draw_context = True
             with self.pushContext():
-                self.draw()
+                self._draw_fn(self)
                 self._swapBuffer()
             self._is_draw_context = False
             # batch messages to minimize send count
@@ -366,11 +358,9 @@ class WebView:
             self._sendQueue.clear()
             self.frameCount += 1
 
-    async def _serve_webview(self, webview_server, width, height):
+    async def serve(self, webview_server):
         """Make webview available on the given webview server."""
-        self.width = width
-        self.height = height
-        await webview_server.add_webview(self, width, height)
+        await webview_server.add_webview(self, self.width, self.height)
         await self._run_draw_loop()
 
     @queue_eval
@@ -622,5 +612,26 @@ class WebView:
         yield None
         self._popContext()
 
-    def draw(self):
-        pass
+
+class WebViewMixin:
+    """Remote visualization mixin
+
+      * the host class inherits a single attribute, `webview`, and
+        must implement draw()
+      * by default, the webview name is derived from the host class name
+      * constructor kwargs that begin with 'webview_' are passed to the
+        WebView constructor after removing the prefix
+    """
+
+    def __init__(self, **kwargs):
+        webview_kwargs = {k[len('webview_'):]: v for k, v in kwargs.items()
+                          if k.startswith('webview_')}
+        if webview_kwargs.get('name') is None:
+            webview_kwargs['name'] = self.__class__.__name__.split('.')[-1]
+        self.webview = WebView(webview_kwargs.pop('name'),
+                               draw_fn=self.draw, **webview_kwargs)
+
+    # TODO: distinct WebView and WebViewContext classes.  Only the latter
+    #   has API accessible to draw().
+    def draw(self, ctx: WebView):
+        raise NotImplementedError

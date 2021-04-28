@@ -42,20 +42,23 @@ Then connect at http://localhost:8080/
 Pura requires that your program be running under the
 [python-trio](https://github.com/python-trio/trio) async/await event loop.
 
-Add visualizations to your program by inheriting from `WebView`
+Add visualizations to your program by inheriting from `WebViewMixin`
 and implementing the `draw()` method.
 
 At the top level of your program, launch the web view server and
 register your class instances.
 
 ```python
-from pura import WebView, WebViewServer
+from pura import WebViewMixin, WebViewServer
 import trio
 
-class Foo(WebView):
-    def draw(self):
-        self.background(0)
-        self.line(0, 0, self.width, self.height)
+class Foo(WebViewMixin):
+    def __init__(self):
+        super().__init__(webview_size=(320, 240))
+
+    def draw(self, ctx):
+        ctx.background(0)
+        ctx.line(0, 0, ctx.width, ctx.height)
         ...
 
 ...
@@ -64,11 +67,11 @@ foo = Foo()
 server = WebViewServer()
 async with trio.open_nursery() as nursery:
     await nursery.start(server.serve, "Web view server", 'localhost', 8080)
-    nursery.start_soon(foo._serve_webview, server, 320, 240)
+    nursery.start_soon(foo.webview.serve, server)
 ```
 
 See the project [`examples/`](examples/) directory, as well as the
-`WebView` class documentation.
+`WebView` and `WebViewMixin` class documentation.
 
 Note that, since it's unlikely that Pura can be used as-is in another
 project, the package has not been released to pypi.  Please file an

@@ -70,10 +70,10 @@ class WebViewServer:
 
     @staticmethod
     def _add_webview_message(webview, width, height):
-        return f'pura.add_webview(ws_url,"{webview._webview_name}",{width},{height});'
+        return f'pura.add_webview(ws_url,"{webview.name}",{width},{height});'
 
     async def add_webview(self, webview, width, height):
-        path = f'/ws/{webview._webview_name}'
+        path = f'/ws/{webview.name}'
         assert path not in self.handlers_by_path
         self.handlers_by_path[path] = webview
         self.webviews.append((webview, width, height))
