@@ -3,7 +3,7 @@ import math
 
 import trio
 
-from pura import WebViewServer, WebViewMixin, TextAlign
+from pura import WebViewServer, WebViewMixin, TextAlign, StrokeCap, Color
 
 PI = math.pi
 HALF_PI = PI / 2
@@ -133,6 +133,58 @@ class Shapes(WebViewMixin):
             shape(close=True)
 
 
+class StrokeCaps(WebViewMixin):
+
+    def __init__(self):
+        super().__init__(webview_size=DEFAULT_SIZE, webview_frame_rate=FRAME_RATE)
+
+    def draw(self, ctx):
+        ctx.background(200)
+
+        # cap styles
+        ctx.translate(30, 50)
+        with ctx.pushContext():
+            for cap in StrokeCap:
+                ctx.strokeWeight(12)
+                ctx.stroke(0)
+                ctx.strokeCap(cap)
+                ctx.line(0, 0, 60, 0)
+                ctx.line(60, 0, 60, 20)
+
+                ctx.strokeWeight(6)
+                ctx.stroke(255)
+                ctx.point(0, 0)
+                ctx.point(60, 0)
+                ctx.point(60, 20)
+
+                ctx.text(cap.name, 0, -15)
+
+                ctx.translate(0, 70)
+
+        # use square cap for joining arcs
+        ctx.translate(200, 30)
+        with ctx.pushContext():
+            ctx.rotate(PI)
+            ctx.strokeCap(StrokeCap.SQUARE)
+            ctx.strokeWeight(15)
+            ctx.noFill()
+            for angle, color in (
+                    (80, Color(20, 220, 20)),
+                    (60, Color(210, 210, 20)),
+                    (40, Color(240, 20, 20)),
+            ):
+                ctx.stroke(color)
+                ctx.arc(0, 0, 50*2, 50*2, 0, math.radians(angle))
+                ctx.rotate(math.radians(angle))
+
+            # needle
+            ctx.stroke(0)
+            ctx.strokeCap(StrokeCap.ROUND)
+            ctx.strokeWeight(5)
+            ctx.rotate(PI * 1.1)
+            ctx.line(0, 0, 0, 60)
+
+
 class Images(WebViewMixin):
 
     def __init__(self):
@@ -259,7 +311,7 @@ async def async_main():
     async with trio.open_nursery() as nursery:
         server = WebViewServer()
         await nursery.start(server.serve, "Web view test", 'localhost', PORT)
-        for cls in (Clock, Arcs, Shapes, Words):
+        for cls in (Clock, Arcs, StrokeCaps, Shapes, Words):
             nursery.start_soon(cls().webview.serve, server)
 
         # Now we'll subscribe clients to an additional webview server

@@ -121,6 +121,12 @@ class TextAlign(Enum):
     CENTER = 'center'
 
 
+class StrokeCap(Enum):
+    ROUND = 'round'
+    SQUARE = 'butt'
+    PROJECT = 'square'
+
+
 class _ShapeState(Enum):
     NONE = auto()
     FIRST = auto()
@@ -264,7 +270,7 @@ class WebView:
     async def _handleConnected(self, peer):
         # set up canvas defaults, etc.
         await peer.send(
-            f"ctx.lineCap = 'round';"
+            f"ctx.lineCap = '{StrokeCap.ROUND.value}';"
             f"ctx.font = '{DEFAULT_TEXT_SIZE}px {DEFAULT_TEXT_FONT}';"
             f"ctx.fillStyle = '{_canvas_color(DEFAULT_BACKGROUND_COLOR)}';"
             f"ctx.fillRect(0, 0, {self.width}, {self.height});"
@@ -380,6 +386,10 @@ class WebView:
     def strokeWeight(self, x):
         return f"ctx.lineWidth = {x};"
 
+    @ queue_eval
+    def strokeCap(self, cap: StrokeCap):
+        return f"ctx.lineCap = '{cap.value}';"
+
     @queue_eval
     def stroke(self, *args):
         return f"ctx.strokeStyle = '{_canvas_color(*args)}';"
@@ -443,18 +453,8 @@ class WebView:
             f'ctx.stroke();'
         )
 
-    @queue_eval
     def point(self, x, y):
-        return (
-            '{'
-            f'let tmpFill=ctx.fillStyle;'
-            f'ctx.fillStyle=ctx.strokeStyle;'
-            f'ctx.beginPath();'
-            f'ctx.arc({x},{y},ctx.lineWidth/2,0,Math.PI*2);'
-            f'ctx.fill();'
-            f'ctx.fillStyle=tmpFill;'
-            '}'
-        )
+        return self.line(x, y, x, y)
 
     # TODO: support corner radius
     # TODO: support rectMode()
