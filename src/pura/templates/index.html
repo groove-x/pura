@@ -7,6 +7,7 @@
         width: 100%;
         height: 100%;
         margin: 0;
+        font-family: sans-serif;
       }
       #main {
         padding: 1em;
@@ -45,10 +46,12 @@
 </head>
 <body>
   <div id="main">
-    <span id="connection-status" class="status dead"/>
-    <select id="webview-select"></select>
-    <br>
-    <div id="canvas-div">
+    <div id="canvas-div" style="display: inline-block; padding-top:0">
+        <p style="margin-top:0; padding-top:0">
+            <span id="connection-status" class="status dead"/>
+            <select id="webview-select"></select>
+            <span style="float:right">{{ title }}</span>
+        </p>
         <canvas id="pura-canvas"></canvas>
     </div>
     <script type="text/javascript">
