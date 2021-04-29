@@ -82,21 +82,24 @@ class WebViewServer:
 
     @staticmethod
     def _add_webview_message(name, ctx):
-        return f'pura.add_webview(ws_url,"{name}",{ctx.width},{ctx.height});'
+        display_name = getattr(ctx, 'display_name', '')
+        link_url = getattr(ctx, 'link_url', '')
+        return f'pura.add_webview(ws_url,"{name}",{ctx.width},{ctx.height},' \
+               f'"{display_name}","{link_url}");'
 
     # TODO: support unregistering views
     async def add_webview(self, name, ctx):
         assert name not in self.handlers_by_path
         self.handlers_by_path[name] = ctx
         self.webviews.append((name, ctx))
-        await self._sendAllPeers(
-            self._add_webview_message(name, ctx))
+        await self._sendAllPeers(self._add_webview_message(name, ctx))
 
     async def add_repl(self, repl: WebRepl):
-        path = 'repl'
-        assert path not in self.handlers_by_path
-        self.handlers_by_path[path] = repl
-        await self._sendAllPeers('pura.add_webview(ws_url,"REPL",0,0);')
+        # on the main webview page, selecting the REPL will open a link
+        # TODO: get websocket and http paths from server config
+        repl.display_name = 'REPL (new window)'
+        repl.link_url = '/repl'
+        await self.add_webview('repl', repl)
 
     @staticmethod
     def _add_remote_message(url):

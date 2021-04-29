@@ -19,9 +19,10 @@ pura.backCanvas = document.createElement("canvas");
 pura.backCanvas.width = canvas.width;
 pura.backCanvas.height = canvas.height;
 pura.backContext = pura.backCanvas.getContext("2d");
-pura.webviewInfoByName = {};  // port, width, height
+pura.webviewInfoByName = {};  // port, width, height, display_name, link_url
 pura.webviewSelect = document.getElementById("webview-select");
 pura.connectionStatus = document.getElementById("connection-status");
+pura.haveNonLinkWebview = false;
 pura.lastWebview = window.location.hash ? window.location.hash.slice(1) : null;
 pura.lastButtons = [];
 pura.lastAxes = [];
@@ -52,6 +53,7 @@ pura.webview_server_subscribe = function(base_url, is_root) {
     ws.onopen = function() {
         if (is_root) {
             pura.webviewInfoByName = {};
+            pura.haveNonLinkWebview = false;
             pura.webviewServers = [];
             pura.webviewSelect.innerHTML = "";
             if (pura.lastWebview) {
@@ -119,10 +121,12 @@ pura.isConnected = function () {
     return pura.webviewSocket !== null && pura.webviewSocket.readyState === WebSocket.OPEN;
 };
 
-pura.add_webview = function(base_url, name, width, height) {
-    window.console.log('add webview', base_url + name);
+pura.add_webview = function(base_url, path, width, height, display_name, link_url) {
+    let url = base_url + path;
+    let name = display_name || path;
+    window.console.log('add webview', url);
     pura.webviewInfoByName[name] =
-        {url: base_url + name, width: width, height: height};
+        {url: url, width: width, height: height, link_url: link_url};
     let option = document.createElement("option");
     option.text = name;
     // add item to list in alphabetical order
@@ -136,7 +140,10 @@ pura.add_webview = function(base_url, name, width, height) {
             pura.webviewSelect.value = name;
             pura.requestOpenWebview();
         }
-    } else if (pura.webviewSelect.length === 1) {
+    } else if (!pura.haveNonLinkWebview && !link_url) {
+        // received the first valid (non-link) item, so select it
+        pura.haveNonLinkWebview = true;
+        pura.webviewSelect.value = name;
         pura.requestOpenWebview();
     }
 };
@@ -176,11 +183,21 @@ pura.resumeCommands = function() {
 };
 
 pura.webviewSelect.onchange = function() {
+    let name = pura.webviewSelect.value;
+    let info = pura.webviewInfoByName[name];
+
+    // Hacky way to surface REPL, etc.:  named URL's are registered as "webviews".
+    // When that item gets selected, restore the dropdown value and open the URL
+    // in a new window.
+    if (info.link_url) {
+        pura.webviewSelect.value = pura.lastWebview;
+        window.open(info.link_url, '_blank');
+        return;
+    }
+
     if (pura.webviewSocket) {
         pura.webviewSocket.close();
     }
-    let name = pura.webviewSelect.value;
-    let info = pura.webviewInfoByName[name];
     let pixelRatio = window.devicePixelRatio;
     canvas.width = pura.backCanvas.width = Math.trunc(info.width * pixelRatio);
     canvas.height = pura.backCanvas.height = Math.trunc(info.height * pixelRatio);

@@ -314,9 +314,6 @@ async def async_main():
         for cls in (Clock, Arcs, StrokeCaps, Shapes, Words):
             nursery.start_soon(cls().webview.serve, server)
 
-        from pura import WebRepl
-        await server.add_repl(WebRepl(locals()))
-
         # Now we'll subscribe clients to an additional webview server
         # (which will be started as another WebViewServer instance below).
         # This will work for servers in another process or machine as well.

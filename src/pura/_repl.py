@@ -89,6 +89,11 @@ class WebRepl:
     def __init__(self, namespace):
         self.namespace = namespace
         self._interpreter = code.InteractiveInterpreter(namespace)
+        # to satisfy webview infrastructure
+        self.width, self.height = 0, 0
+        # name and link used when surfacing the REPL as an option in the webview dropdown
+        self.display_name = None
+        self.link_url = None
 
     async def _handleConnected(self, peer: quart.Websocket):
         pass
