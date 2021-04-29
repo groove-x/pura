@@ -16,6 +16,7 @@ class WebViewServer:
         self._peers: List[quart.Websocket] = []
         self.webviews = []  # (name, ctx)
         self.remote_webview_servers = []  # url
+        # TODO: make a WebsocketHandler mixin, fix naming convention of _handleConnected(), etc.
         self.handlers_by_path = {'_main': self}
 
     def get_blueprint(self, title):
@@ -51,7 +52,7 @@ class WebViewServer:
                 while True:
                     message = await websocket.receive()
                     # print(path, 'received', message)
-                    handler._handleMessage(message)
+                    await handler._handleMessage(websocket, message)
             finally:
                 # print(path, 'closed')
                 handler._handleClose(websocket)
@@ -115,7 +116,7 @@ class WebViewServer:
     def _handleClose(self, peer: quart.Websocket):
         self._peers.remove(peer)
 
-    def _handleMessage(self, msg):
+    async def _handleMessage(self, peer: quart.Websocket, msg):
         """Process incoming JSON message from client."""
         #msg_type = msg['type']
         #logger.warning(f"unhandled message type: {msg['type']}")

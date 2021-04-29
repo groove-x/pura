@@ -314,7 +314,7 @@ class DrawContext:
         self._peers.remove(peer)
         self._hasPeers.value = len(self._peers) > 0
 
-    def _handleMessage(self, msg):
+    async def _handleMessage(self, peer, msg):
         """Process incoming JSON message from webview client."""
         # TODO: only accept input from one webview client
         # queue the message until our next draw iteration
