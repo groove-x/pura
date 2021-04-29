@@ -6,6 +6,8 @@ import quart
 import trio
 from quart_trio import QuartTrio
 
+from pura import WebRepl
+
 _logger = logging.getLogger(__name__)
 
 
@@ -26,6 +28,10 @@ class WebViewServer:
         @blueprint.route('/')
         async def _index():
             return await quart.render_template('index.html', title=title)
+
+        @blueprint.route('/repl')
+        async def _repl():
+            return await quart.render_template('repl.html', title=title)
 
         @blueprint.route('/js/<path:path>')
         async def _js(path):
@@ -80,12 +86,17 @@ class WebViewServer:
 
     # TODO: support unregistering views
     async def add_webview(self, name, ctx):
-        path = f'{name}'
-        assert path not in self.handlers_by_path
-        self.handlers_by_path[path] = ctx
+        assert name not in self.handlers_by_path
+        self.handlers_by_path[name] = ctx
         self.webviews.append((name, ctx))
         await self._sendAllPeers(
             self._add_webview_message(name, ctx))
+
+    async def add_repl(self, repl: WebRepl):
+        path = 'repl'
+        assert path not in self.handlers_by_path
+        self.handlers_by_path[path] = repl
+        await self._sendAllPeers('pura.add_webview(ws_url,"REPL",0,0);')
 
     @staticmethod
     def _add_remote_message(url):
@@ -106,6 +117,7 @@ class WebViewServer:
             await peer.send(msg)
 
     async def _handleConnected(self, peer: quart.Websocket):
+        # TODO: reload client on version mismatch of HTML/JS resources
         self._peers.append(peer)
         for name, ctx in self.webviews:
             await peer.send(

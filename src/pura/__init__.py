@@ -18,6 +18,7 @@ Summary of important webview classes:
 Be sure to check the documentation of each class.
 """
 
+from ._repl import WebRepl
 from ._version import __version__
 from ._web_view import WebView, WebViewMixin, DrawContext, Color, KeyboardKey, TextAlign, StrokeCap
 from ._web_view_server import WebViewServer
