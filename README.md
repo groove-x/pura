@@ -25,6 +25,11 @@ Read-eval-print loop:
  * the REPL is available while your program is running
  * tab completion is supported
 
+Async makes inspection of a running program possible due to the nature of
+cooperative multitasking:  tasks yield only when at a good stopping point.
+Thus, when a visualization is generated, or a REPL statement evaluated,  the
+program is likely to be in a coherent state honoring its invariants.
+
 The example in action:
 
 ![Demo video](docs/pura_demo.gif)
@@ -86,7 +91,7 @@ class Foo(WebViewMixin):
 foo = Foo()
 server = WebViewServer()
 await asyncio.gather(
-    server.serve("Web view server", 'localhost', 8080),
+    server.serve("Web view server", "localhost", 8080),
     foo.webview.serve(server))
 ```
 
