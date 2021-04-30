@@ -73,7 +73,7 @@ class WebViewServer:
         # (quart and hypercorn should have a common API for asyncio and trio...)
         async_lib = sniffio.current_async_library()
         if async_lib == 'trio':
-            from quart_trio import QuartTrio  # pylint: disable=import-outside-toplevel
+            from quart_trio import QuartTrio  # pylint: disable=import-outside-toplevel,import-error
             web_app = QuartTrio('pura')
             web_app.register_blueprint(self.get_blueprint(title))
             async with anyio.create_task_group() as tg:
