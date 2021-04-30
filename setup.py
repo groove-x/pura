@@ -13,8 +13,9 @@ setup(
     name=pkg_name,
     description='The little async embedded visualization framework that could',
     long_description='''
-Pura is a simple embedded visualization framework inspired by the
-Processing API and based on the python-trio async/await event loop.
+Pura is a framework enabling remote, always-available graphical and command
+line views for developers to understand, inspect, and modify their
+async app while it's running.
 ''',
     long_description_content_type='text/markdown',
     version=version,
