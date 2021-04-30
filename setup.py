@@ -25,12 +25,19 @@ Processing API and based on the python-trio async/await event loop.
     packages=[pkg_name],
     package_dir={'': 'src'},
     install_requires=[
+        'anyio ~= 3.0.0',
         'attrs >= 19.2.0',  # for "eq"
         'hypercorn',
         'quart >= 0.14.0',
-        'quart_trio >= 0.7.0',
-        'trio >= 0.11.0',
+        'sniffio',
     ],
+    extras_require={
+        'trio': [
+            'anyio[trio] ~= 3.0.0',
+            'hypercorn',
+            'quart_trio >= 0.7.0',
+        ],
+    },
     python_requires='>=3.7',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -40,6 +47,7 @@ Processing API and based on the python-trio async/await event loop.
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Framework :: AsyncIO',
         'Framework :: Trio',
     ],
 )

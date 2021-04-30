@@ -21,3 +21,6 @@ type_check:
 #   make -W test-requirements.{in,txt} PIP_COMPILE_ARGS="-P foo"
 test-requirements.txt: setup.py test-requirements.in
 	pip-compile -q $(PIP_COMPILE_ARGS) --output-file $@ $^
+
+test-requirements-trio.txt: setup.py test-requirements.in
+	pip-compile -q $(PIP_COMPILE_ARGS) --extra trio --output-file $@ $^

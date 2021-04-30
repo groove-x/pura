@@ -8,7 +8,7 @@ from functools import wraps, total_ordering
 from itertools import takewhile
 from typing import NamedTuple
 
-import trio
+import anyio
 from attr import attrs
 
 TWO_PI = math.pi * 2
@@ -274,7 +274,7 @@ class DrawContext:
         self._draw_fn = draw_fn
         self._frame_rate = frame_rate
         self._peers = set()
-        self._hasPeers = trio.Event()
+        self._hasPeers = anyio.Event()
         # NOTE: empty string is used to force a batching boundary
         self._sendQueue = []
         self._receiveQueue = []  # oldest to newest
@@ -313,7 +313,7 @@ class DrawContext:
     def _handleClose(self, peer):
         self._peers.remove(peer)
         if not self._peers:
-            self._hasPeers = trio.Event()
+            self._hasPeers = anyio.Event()
 
     async def _handleMessage(self, peer, msg):
         """Process incoming JSON message from webview client."""
@@ -366,7 +366,7 @@ class DrawContext:
     async def _run_draw_loop(self):
         period = 1 / self._frame_rate
         while True:
-            t_start = trio.current_time()
+            t_start = anyio.current_time()
             await self._hasPeers.wait()
             peers = self._peers.copy()
             self.inputEvents.clear()
@@ -394,8 +394,8 @@ class DrawContext:
                     break
             self._sendQueue.clear()
             self.frameCount += 1
-            user_elapsed = trio.current_time() - t_start
-            await trio.sleep(max(0, period - user_elapsed))
+            user_elapsed = anyio.current_time() - t_start
+            await anyio.sleep(max(0, period - user_elapsed))
 
     @queue_eval
     def background(self, *args):

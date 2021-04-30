@@ -1,7 +1,9 @@
+import argparse
 import logging
 import math
+import time
 
-import trio
+import anyio
 
 from pura import WebViewServer, WebViewMixin, TextAlign, StrokeCap, Color
 
@@ -37,7 +39,7 @@ class Clock(WebViewMixin):
 
     def draw(self, ctx):
         ctx.background(200)
-        angle = (trio.current_time() % 60) / 60 * (2 * math.pi)
+        angle = (time.time() % 60) / 60 * (2 * math.pi)
         ctx.translate(ctx.width/2, ctx.height/2)
         ctx.scale(2)
         with ctx.pushContext():
@@ -308,11 +310,11 @@ class Follow3(WebViewMixin):
 
 
 async def async_main():
-    async with trio.open_nursery() as nursery:
+    async with anyio.create_task_group() as tg:
         server = WebViewServer()
-        await nursery.start(server.serve, "Web view test", 'localhost', PORT)
+        await tg.start(server.serve, "Web view test", 'localhost', PORT)
         for cls in (Clock, Arcs, StrokeCaps, Shapes, Words):
-            nursery.start_soon(cls().webview.serve, server)
+            tg.start_soon(cls().webview.serve, server)
 
         # Now we'll subscribe clients to an additional webview server
         # (which will be started as another WebViewServer instance below).
@@ -322,15 +324,18 @@ async def async_main():
         # NOTE: normally there is no reason to have multiple webview servers
         # in the same process.  This is only to demonstrate add_remote().
         server2 = WebViewServer()
-        await nursery.start(server2.serve, "Web view test2", 'localhost', PORT2)
+        await tg.start(server2.serve, "Web view test2", 'localhost', PORT2)
         for cls in (Images, Follow3):
-            nursery.start_soon(cls().webview.serve, server2)
+            tg.start_soon(cls().webview.serve, server2)
             # demonstrate a view being registered late
-            await trio.sleep(7)
+            await anyio.sleep(5)
 
 if __name__ == '__main__':
     _setup_logging()
+    parser = argparse.ArgumentParser(description='web view example')
+    parser.add_argument('--async-backend', default='asyncio', choices=['ayncio', 'trio'])
+    args = parser.parse_args()
     try:
-        trio.run(async_main)
+        anyio.run(async_main, backend=args.async_backend)
     except KeyboardInterrupt:
         print()

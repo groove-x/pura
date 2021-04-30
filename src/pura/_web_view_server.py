@@ -1,10 +1,11 @@
 import logging
+from asyncio import CancelledError
 from typing import List
 
+import anyio
 import hypercorn
 import quart
-import trio
-from quart_trio import QuartTrio
+import sniffio
 
 from pura import WebRepl
 
@@ -66,19 +67,36 @@ class WebViewServer:
         return blueprint
 
     async def serve(self, title, host, port, *,
-                    task_status=trio.TASK_STATUS_IGNORED):
+                    task_status=anyio.TASK_STATUS_IGNORED):
         """Web view server task."""
 
-        web_app = QuartTrio('pura')
-        web_app.register_blueprint(self.get_blueprint(title))
-        async with trio.open_nursery() as nursery:
-            urls = await nursery.start(hypercorn.trio.serve, web_app,
-                                       hypercorn.Config.from_mapping(
-                                           bind=[f'{host}:{port}'],
-                                           loglevel='WARNING',
-                                       ))
-            _logger.info(f'listening on {urls[0]}')
+        # (quart and hypercorn should have a common API for asyncio and trio...)
+        async_lib = sniffio.current_async_library()
+        if async_lib == 'trio':
+            from quart_trio import QuartTrio  # pylint: disable=import-outside-toplevel
+            web_app = QuartTrio('pura')
+            web_app.register_blueprint(self.get_blueprint(title))
+            async with anyio.create_task_group() as tg:
+                urls = await tg.start(hypercorn.trio.serve, web_app,
+                                      hypercorn.Config.from_mapping(
+                                          bind=[f'{host}:{port}'],
+                                          loglevel='WARNING',
+                                      ))
+                _logger.info(f'listening on {urls[0]}')
+                task_status.started()
+        elif async_lib == 'asyncio':
+            web_app = quart.Quart('pura')
+            web_app.register_blueprint(self.get_blueprint(title))
             task_status.started()
+            await hypercorn.asyncio.serve(web_app,
+                                          hypercorn.Config.from_mapping(
+                                              bind=[f'{host}:{port}'],
+                                              loglevel='INFO',
+                                              graceful_timeout=.2,
+                                          ))
+            raise CancelledError
+        else:
+            raise RuntimeError('unsupported async library:', async_lib)
 
     @staticmethod
     def _add_webview_message(name, ctx):

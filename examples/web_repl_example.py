@@ -1,4 +1,6 @@
-import trio
+import argparse
+
+import anyio
 
 from pura import WebViewServer, WebRepl
 
@@ -13,18 +15,18 @@ class Counter:
     async def _run(self):
         while True:
             self.count += 1
-            await trio.sleep(0.5)
+            await anyio.sleep(0.5)
 
     def increment_by(self, value):
         self.count += value
 
 
 async def main():
-    async with trio.open_nursery() as nursery:
+    async with anyio.create_task_group() as tg:
         counter = Counter()
-        nursery.start_soon(counter._run)
+        tg.start_soon(counter._run)
         webview_server = WebViewServer()
-        await nursery.start(webview_server.serve, "WebRepl test", HOST, HTTP_PORT)
+        await tg.start(webview_server.serve, "WebRepl test", HOST, HTTP_PORT)
         await webview_server.add_repl(WebRepl(dict(
             counter=counter,
             some_variable='hello',
@@ -33,7 +35,10 @@ async def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='web repl example')
+    parser.add_argument('--async-backend', default='asyncio', choices=['ayncio', 'trio'])
+    args = parser.parse_args()
     try:
-        trio.run(main)
+        anyio.run(main, backend=args.async_backend)
     except KeyboardInterrupt:
         print()
