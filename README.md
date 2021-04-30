@@ -19,7 +19,7 @@ Visualizations:
  * views have no overhead unless there is a remote client specifically observing it
  * keyboard and mouse input is supported
 
-Read-eval-print-loop:
+Read-eval-print loop:
  * apps can register a REPL exposing a specific namespace
  * REPL instances can be created remotely over HTTP by one or more browser clients
  * the REPL is available while your program is running

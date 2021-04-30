@@ -5,7 +5,7 @@ import time
 
 import anyio
 
-from pura import WebViewServer, WebViewMixin, TextAlign, StrokeCap, Color
+from pura import WebViewServer, WebViewMixin, TextAlign, StrokeCap, Color, WebRepl
 
 PI = math.pi
 HALF_PI = PI / 2
@@ -31,15 +31,43 @@ def _setup_logging():
     _pura_logger.setLevel(logging.INFO)
 
 
+class Hello(WebViewMixin):
+    def __init__(self):
+        super().__init__(webview_size=DEFAULT_SIZE, webview_frame_rate=FRAME_RATE)
+
+    def draw(self, ctx):
+        ctx.background(200)
+        ctx.translate(ctx.width/2, ctx.height/2)
+        ctx.scale(3)
+        ctx.fill(128, 0, 255)
+        ctx.rotate(time.time() % (2*PI))
+        ctx.text("hello", 0, 0)
+
+
 class Clock(WebViewMixin):
 
     def __init__(self):
         super().__init__(webview_size=DEFAULT_SIZE, webview_frame_rate=FRAME_RATE)
-        self.mouse_angle = 0
+        self._mouse_angle = -HALF_PI
+
+    @property
+    def alarm_time(self):
+        precision = 10 / 60
+        hours = 12 * ((self._mouse_angle + HALF_PI) % TWO_PI) / TWO_PI + precision/2
+        offset = hours % precision
+        hours -= offset
+        minutes = (hours % 1) * 60
+        return f'{int(hours):02d}:{minutes:02.0f}'
+
+    @alarm_time.setter
+    def alarm_time(self, value):
+        hours, minutes = value.split(':')
+        hours = int(hours) + int(minutes) / 60
+        self._mouse_angle = TWO_PI * hours / 12 - HALF_PI
 
     def draw(self, ctx):
         ctx.background(200)
-        angle = (time.time() % 60) / 60 * (2 * math.pi)
+        angle = (time.time() % 60) / 60 * TWO_PI
         ctx.translate(ctx.width/2, ctx.height/2)
         ctx.scale(2)
         with ctx.pushContext():
@@ -53,9 +81,14 @@ class Clock(WebViewMixin):
             ctx.stroke(255, 150)
             ctx.rect(20, 0, 10, 20)
         with ctx.pushContext():
+            ctx.rotate(self._mouse_angle)
+            ctx.strokeWeight(2.5)
+            ctx.stroke(240)
+            ctx.line(0, 0, 30, 0)
+        with ctx.pushContext():
             ctx.rotate(angle)
-            ctx.strokeWeight(2)
-            ctx.stroke(0)
+            ctx.stroke(100, 100, 200)
+            ctx.strokeWeight(1.5)
             ctx.line(0, 0, 30, 0)
         with ctx.pushContext():
             ctx.rotate(angle * 10)
@@ -64,12 +97,8 @@ class Clock(WebViewMixin):
             for x in range(0, 50, 5):
                 ctx.point(x, 0)
         if ctx.mousePressed:
-            self.mouse_angle = math.atan2(
+            self._mouse_angle = math.atan2(
                 ctx.mouseY-ctx.height/2, ctx.mouseX-ctx.width/2)
-        with ctx.pushContext():
-            ctx.rotate(self.mouse_angle)
-            ctx.stroke(100, 100, 200)
-            ctx.line(0, 0, 40, 0)
 
 
 class Arcs(WebViewMixin):
@@ -280,7 +309,7 @@ class Follow3(WebViewMixin):
     def __init__(self):
         super().__init__(webview_size=DEFAULT_SIZE, webview_frame_rate=FRAME_RATE)
         self.segLength = 15
-        num_segments = 15
+        num_segments = 13
         self.x = [0.0] * num_segments
         self.y = [0.0] * num_segments
 
@@ -312,9 +341,15 @@ class Follow3(WebViewMixin):
 async def async_main():
     async with anyio.create_task_group() as tg:
         server = WebViewServer()
-        await tg.start(server.serve, "Web view test", 'localhost', PORT)
-        for cls in (Clock, Arcs, StrokeCaps, Shapes, Words):
-            tg.start_soon(cls().webview.serve, server)
+        await tg.start(server.serve, "Web view example", 'localhost', PORT)
+        viz_obs = {}
+        for cls in (Hello, Clock, Arcs, StrokeCaps, Shapes, Words):
+            obj = cls()
+            tg.start_soon(obj.webview.serve, server)
+            viz_obs[obj.webview.name] = obj
+
+        await server.add_repl(WebRepl(dict(hello_pycon='😊',
+                                           clock=viz_obs['Clock'])))
 
         # Now we'll subscribe clients to an additional webview server
         # (which will be started as another WebViewServer instance below).
