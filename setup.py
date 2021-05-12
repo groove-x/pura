@@ -35,7 +35,7 @@ async app while it's running.
     extras_require={
         'trio': [
             'anyio[trio] ~= 3.0.0',
-            'hypercorn',
+            'hypercorn[trio]',
             'quart_trio >= 0.7.0',
         ],
     },
