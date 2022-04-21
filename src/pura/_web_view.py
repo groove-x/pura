@@ -44,6 +44,9 @@ class KeyboardKey(NamedTuple):  # pylint: disable=inherit-non-class
         # https://stackoverflow.com/questions/61543768/super-in-a-typing-namedtuple-subclass-fails-in-python-3-8
         return tuple.__eq__(self, other)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __lt__(self, other):
         if isinstance(other, str):
             return self.key < other

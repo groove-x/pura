@@ -9,6 +9,7 @@ def test_key():
 
     assert a == a2
     assert a == 'a'
+    assert not a != 'a'  # pylint: disable=unneeded-not
     assert str(a) == 'a'
 
     assert a != a_alt
