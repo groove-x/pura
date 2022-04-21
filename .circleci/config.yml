@@ -7,7 +7,7 @@ version: 2
 jobs:
   "python-3.7":
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
 
     working_directory: ~/repo
 
@@ -15,20 +15,20 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "test-requirements.txt" }}
-            - v1-dependencies-
+            - v1-py37-dependencies-{{ checksum "test-requirements.txt" }}
+            - v1-py37-dependencies-
       - run:
           name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install -r test-requirements.txt -e .
-            curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
+            curl -sL https://deb.nodesource.com/setup_14.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "test-requirements.txt" }}
+          key: v1-py37-dependencies-{{ checksum "test-requirements.txt" }}
       - run:
           name: run tests
           command: |
@@ -47,7 +47,7 @@ jobs:
 
   "python-3.8":
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
 
     working_directory: ~/repo
 
@@ -55,20 +55,20 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "test-requirements.txt" }}
-            - v1-dependencies-
+            - v1-py38-dependencies-{{ checksum "test-requirements.txt" }}
+            - v1-py38-dependencies-
       - run:
           name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install -r test-requirements.txt -e .
-            curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
+            curl -sL https://deb.nodesource.com/setup_14.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "test-requirements.txt" }}
+          key: v1-py38-dependencies-{{ checksum "test-requirements.txt" }}
       - run:
           name: run tests
           command: |
@@ -87,7 +87,7 @@ jobs:
 
   "python-3.9":
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     working_directory: ~/repo
 
@@ -95,20 +95,20 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "test-requirements.txt" }}
-            - v1-dependencies-
+            - v1-py39-dependencies-{{ checksum "test-requirements.txt" }}
+            - v1-py39-dependencies-
       - run:
           name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install -r test-requirements.txt -e .
-            curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
+            curl -sL https://deb.nodesource.com/setup_14.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "test-requirements.txt" }}
+          key: v1-py39-dependencies-{{ checksum "test-requirements.txt" }}
       - run:
           name: run tests
           command: |
@@ -127,7 +127,7 @@ jobs:
 
   "python-3.9-trio":
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
 
     working_directory: ~/repo
 
@@ -135,20 +135,20 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "test-requirements-trio.txt" }}
-            - v1-dependencies-
+            - v1-py39-dependencies-{{ checksum "test-requirements-trio.txt" }}
+            - v1-py39-dependencies-
       - run:
           name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install -r test-requirements-trio.txt -e .
-            curl -sL https://deb.nodesource.com/setup_11.x | sudo bash - && sudo apt-get install -y nodejs tidy
+            curl -sL https://deb.nodesource.com/setup_14.x | sudo bash - && sudo apt-get install -y nodejs tidy
             sudo npm install -g jshint
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "test-requirements-trio.txt" }}
+          key: v1-py39-dependencies-{{ checksum "test-requirements-trio.txt" }}
       - run:
           name: run tests
           command: |
