@@ -119,9 +119,12 @@ class Color:
 
 
 class TextAlign(Enum):
-    LEFT = 'left'
-    RIGHT = 'right'
-    CENTER = 'center'
+    LEFT = ('left', '')  # html canvas values (horizontal, vertical)
+    RIGHT = ('right', '')
+    CENTER = ('center', 'middle')
+    TOP = ('', 'top')
+    BOTTOM = ('', 'bottom')
+    BASELINE = ('', 'alphabetic')
 
 
 class StrokeCap(Enum):
@@ -617,8 +620,11 @@ class DrawContext:
         return f"ctx.font = ctx.font.split(' ')[0] + ' {v}';"
 
     @queue_eval
-    def textAlign(self, align_x: TextAlign):
-        return f"ctx.textAlign = '{align_x.value}';"
+    def textAlign(self, align_x: TextAlign, align_y=TextAlign.BASELINE):
+        h, v = align_x.value[0], align_y.value[1]
+        if not (h and v):
+            raise ValueError('incorrect alignment values')
+        return f"ctx.textAlign = '{h}'; ctx.textBaseline = '{v}';"
 
     @queue_eval
     def smooth(self):

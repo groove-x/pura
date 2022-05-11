@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import logging
 import math
 import time
@@ -162,6 +163,39 @@ class Shapes(WebViewMixin):
             ctx.noStroke()
             ctx.translate(ctx.width * 0.5, ctx.height * 0.6)
             shape(close=True)
+
+
+class Text(WebViewMixin):
+
+    def __init__(self):
+        super().__init__(webview_size=DEFAULT_SIZE, webview_frame_rate=FRAME_RATE)
+
+    def draw(self, ctx):
+        ctx.background(0)
+        ctx.stroke(128)
+
+        x = 40
+        y = itertools.count(10, 30)
+        width = 100
+        ctx.textSize(13)
+        ctx.noFill()
+        ctx.rect(x, 10, width, 30 * 2)
+        ctx.line(x + width / 2, 10, x + width / 2, 10 + 30 * 2)
+        ctx.fill(255)
+        for h_align, v_align, x_ in zip(
+                (TextAlign.LEFT, TextAlign.CENTER, TextAlign.RIGHT),
+                (TextAlign.TOP, TextAlign.CENTER, TextAlign.BASELINE),
+                (x, x + width / 2, x + width)):
+            ctx.textAlign(h_align, v_align)
+            ctx.text(h_align.name, x_, next(y))
+
+        ctx.fill(255)
+        y = itertools.count(130, 20)
+        for y, v_align in zip(y, (TextAlign.BOTTOM, TextAlign.BASELINE,
+                                  TextAlign.CENTER, TextAlign.TOP)):
+            ctx.line(0, y, ctx.width, y)
+            ctx.textAlign(TextAlign.LEFT, v_align)
+            ctx.text(f'ghi  {v_align.name}', x, y)
 
 
 class StrokeCaps(WebViewMixin):
@@ -343,7 +377,7 @@ async def async_main():
         server = WebViewServer()
         await tg.start(server.serve, "Web view example", 'localhost', PORT)
         viz_obs = {}
-        for cls in (Hello, Clock, Arcs, StrokeCaps, Shapes, Words):
+        for cls in (Hello, Clock, Arcs, Text, StrokeCaps, Shapes, Words):
             obj = cls()
             tg.start_soon(obj.webview.serve, server)
             viz_obs[obj.webview.name] = obj
